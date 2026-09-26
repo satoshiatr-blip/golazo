@@ -199,7 +199,7 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
                 <Toggle label="人物を切り抜く" checked={sel.cutout} onChange={v => setPhoto(sel.id, { cutout: v })} />
               </Row>
               <Slider label="大きさ" display={`${Math.round(sel.scale * 100)}%`} min={0.5} max={1.6} step={0.02} value={sel.scale} onChange={v => setPhoto(sel.id, { scale: v })} />
-              <Slider label="左右の位置" display={String(Math.round(sel.dx / 10))} min={-500} max={500} step={10} value={sel.dx} onChange={v => setPhoto(sel.id, { dx: v })} />
+              <Slider label="左右の位置" display={String(Math.round(sel.dx / 10))} min={-1100} max={1100} step={10} value={sel.dx} onChange={v => setPhoto(sel.id, { dx: v })} />
               <Slider label="上下の位置" display={String(Math.round(-sel.dy / 10))} min={-300} max={400} step={10} value={sel.dy} onChange={v => setPhoto(sel.id, { dy: v })} />
               <div className="grid grid-cols-3 gap-2">
                 <Button className="min-h-11 text-sm" onClick={() => setPhoto(sel.id, { scale: 1, dx: 0, dy: 0 })}>元に戻す</Button>
