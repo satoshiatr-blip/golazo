@@ -690,6 +690,7 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
 export const ENDING_SLAM = 0.55
 
 export function drawEnding(ctx: Ctx, p: Project, t: number, dur: number) {
+  if (p.opening.style === 'tfc') return drawTfcEnding(ctx, p, t, dur)
   const C = p.color
   const frame = Math.round(t * 30)
   const zoom = 1 + 0.04 * (t / dur)
@@ -783,4 +784,105 @@ function drawEndingText(ctx: Ctx, p: Project, t: number) {
   ctx.textBaseline = 'middle'
   ctx.fillText(sub, x + w / 2, y + 41)
   ctx.restore()
+}
+
+// ---- 高柳FC版のエンディング：深い赤に縦縞が流れ、上の黄金線にエンブレム、下の黄金線に締めの言葉 ----
+
+export const TFC_END = { crest: 0.35, slam: 0.8 }
+const GOLD_Y2 = 1080 / PHI // 667
+
+function drawTfcEnding(ctx: Ctx, p: Project, t: number, dur: number) {
+  const C = p.color
+  const frame = Math.round(t * 30)
+  const zoom = 1 + 0.035 * (t / dur)
+  ctx.save()
+  ctx.translate(OUT_W / 2, OUT_H / 2)
+  ctx.scale(zoom, zoom)
+  ctx.translate(-OUT_W / 2, -OUT_H / 2)
+  ctx.fillStyle = C
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  const v = ctx.createRadialGradient(OUT_W / 2, OUT_H / 2, OUT_H * 0.1, OUT_W / 2, OUT_H / 2, OUT_W * 0.7)
+  v.addColorStop(0, 'rgba(0,0,0,0)')
+  v.addColorStop(1, 'rgba(0,0,0,0.7)')
+  ctx.fillStyle = v
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  // 赤地の上なので、縦縞は黒と白で流す
+  stripeRun(ctx, INK, 0.85 * ease(clamp(t / 0.3, 0, 1)), t * 0.6)
+
+  // エンブレム：上から落ちて、上の黄金線に着地して光が走る
+  if (crest) {
+    const t0 = TFC_END.crest
+    const k = clamp(t / t0, 0, 1)
+    const land = t < t0 ? 1.8 - 0.8 * k * k : 1 + 0.05 * Math.exp(-(t - t0) * 9) * Math.cos((t - t0) * 30)
+    const h = 250 * land
+    const w = (crest.width * h) / crest.height
+    ctx.save()
+    ctx.globalAlpha = t < t0 ? k : 1
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'
+    ctx.shadowBlur = 36
+    ctx.shadowOffsetY = 14
+    drawCrestShine(ctx, OUT_W / 2 - w / 2, GOLD_Y - h / 2, h, (t - 0.55) / 0.45)
+    ctx.restore()
+  }
+
+  const text = p.opening.ending.trim()
+  const ds = t - TFC_END.slam
+  if (text && ds >= 0) {
+    const face = MAIN_FACE.tfc
+    const k = ease(clamp(ds / 0.16, 0, 1))
+    const shake = ds < 0.25 ? (rnd(Math.round(ds * 30) + 11) - 0.5) * 16 * (1 - ds / 0.25) : 0
+    ctx.save()
+    ctx.globalAlpha = clamp(k * 2, 0, 1)
+    ctx.translate(OUT_W / 2 + shake, GOLD_Y2 + shake * 0.5)
+    ctx.rotate(-0.04)
+    const s = 1.6 - 0.6 * k
+    ctx.scale(s, s)
+    ctx.transform(1, 0, -face.skew, 1, 0, 0)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.lineJoin = 'round'
+    let size = 126
+    ctx.font = `${size}px ${face.family}, ${FONT}`
+    size = Math.min(size, (size * 1500) / Math.max(1, ctx.measureText(text).width))
+    ctx.font = `${size}px ${face.family}, ${FONT}`
+    ctx.lineWidth = size * 0.16
+    ctx.strokeStyle = INK
+    ctx.shadowColor = 'rgba(0,0,0,0.4)'
+    ctx.shadowBlur = 24
+    ctx.shadowOffsetY = 10
+    ctx.strokeText(text, 0, 0)
+    ctx.shadowColor = 'transparent'
+    ctx.fillStyle = '#fff'
+    ctx.fillText(text, 0, 0)
+    ctx.restore()
+
+    const sub = defaultBottom(p)
+    const k2 = ease(clamp((ds - 0.35) / 0.3, 0, 1))
+    if (sub && k2 > 0) {
+      ctx.save()
+      ctx.globalAlpha = k2
+      ctx.font = `italic 800 48px ${FONT}`
+      const w = ctx.measureText(sub).width + 100
+      const x = OUT_W / 2 - w / 2 + (1 - k2) * 200, y = GOLD_Y2 + 110
+      ctx.fillStyle = INK
+      slanted(ctx, x, y, w, 76, 18)
+      ctx.fillStyle = C
+      slanted(ctx, x - 24, y, 12, 76, 18)
+      ctx.fillStyle = '#fff'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(sub, x + w / 2, y + 41)
+      ctx.restore()
+    }
+  }
+  ctx.restore()
+  drawGrain(ctx, frame)
+  if (ds >= 0 && ds < 0.1) flash(ctx, 0.5 * (1 - ds / 0.1))
+  const dc = t - TFC_END.crest
+  if (dc >= 0 && dc < 0.1) flash(ctx, 0.5 * (1 - dc / 0.1))
+  if (t < SLASH_SEC) drawSlash(ctx, C, t / SLASH_SEC, frame)
+  if (dur - t < 0.6) {
+    ctx.fillStyle = `rgba(0,0,0,${1 - (dur - t) / 0.6})`
+    ctx.fillRect(0, 0, OUT_W, OUT_H)
+  }
 }

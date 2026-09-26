@@ -46,9 +46,9 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
   const images = useOpeningImages(op.photos)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [playing, setPlaying] = useState(false)
-  // プレビューで見せる場面（エンディングはポスター版だけ）
+  // プレビューで見せる場面（始まり＝オープニング、終わり＝エンディング）
   const [view, setView] = useState<'open' | 'end'>('open')
-  const scene = op.style === 'poster' ? view : 'open'
+  const scene = view
   const sceneDur = scene === 'end' ? CLOSE_SEC : OPEN_SEC
   const [selected, setSelected] = useState<string | null>(null)
   const [working, setWorking] = useState<Set<string>>(new Set())
@@ -154,12 +154,10 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
       <div className="sticky top-0 z-10 -mx-5 px-5 pb-3 bg-ink">
         <canvas ref={canvasRef} className="w-full aspect-video rounded-xl bg-black border border-line" />
         <div className="mt-2 flex gap-2">
-          {op.style === 'poster' && (
-            <div className="w-40 shrink-0">
-              <Segmented<'open' | 'end'> value={view} onChange={v => { setPlaying(false); setView(v) }}
-                options={[{ v: 'open', label: '始まり' }, { v: 'end', label: '終わり' }]} />
-            </div>
-          )}
+          <div className="w-40 shrink-0">
+            <Segmented<'open' | 'end'> value={view} onChange={v => { setPlaying(false); setView(v) }}
+              options={[{ v: 'open', label: '始まり' }, { v: 'end', label: '終わり' }]} />
+          </div>
           <Button variant={playing ? 'secondary' : 'primary'} className="flex-1 min-h-11" onClick={() => setPlaying(v => !v)}>
             {playing ? <><IconStop />止める</> : <><IconPlay />動きを見る</>}
           </Button>
@@ -217,11 +215,9 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
           <Field label="メインの言葉（改行すると2〜3行。最後の行が大きくなります）">
             <textarea className={`${inputCls} h-auto py-2.5 leading-snug`} rows={3} value={op.main} placeholder="夢の続きへ。" onChange={e => setOp({ main: e.target.value })} />
           </Field>
-          {op.style === 'poster' && (
-            <Field label="エンディングの言葉（動画の最後に出ます）">
-              <input className={inputCls} value={op.ending} placeholder="最高の景色へ" onChange={e => setOp({ ending: e.target.value })} />
-            </Field>
-          )}
+          <Field label="エンディングの言葉（動画の最後に出ます）">
+            <input className={inputCls} value={op.ending} placeholder="最高の景色へ" onChange={e => setOp({ ending: e.target.value })} />
+          </Field>
           <Field label="上の小さな見出し">
             <input className={inputCls} value={op.top} placeholder="この一瞬の、その先へ" onChange={e => setOp({ top: e.target.value })} />
           </Field>
