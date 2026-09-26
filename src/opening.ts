@@ -492,7 +492,7 @@ function drawCrestIntro(ctx: Ctx, C: string, t: number, frame: number) {
   const k = clamp(t / t0, 0, 1)
   const land = t < t0 ? 2.4 - 1.4 * k * k : 1 + 0.06 * Math.exp(-(t - t0) * 9) * Math.cos((t - t0) * 30)
   const out = clamp((t - (CREST_END - 0.2)) / 0.2, 0, 1)
-  const h = 640 * land * (1 + out * 0.25)
+  const h = 480 * land * (1 + out * 0.25)
   const w = (crest.width * h) / crest.height
   ctx.save()
   ctx.globalAlpha = (t < t0 ? k : 1) * (1 - out)
@@ -552,7 +552,7 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
   ctx.shadowColor = 'rgba(0,0,0,0.5)'
   ctx.shadowBlur = 24
   ctx.shadowOffsetY = 8
-  const h = 250 * (1.3 - 0.3 * kc)
+  const h = 190 * (1.3 - 0.3 * kc)
   drawCrestShine(ctx, OUT_W - 60 - (crest.width * h) / crest.height, 34, h, (u - 0.9) / 0.5)
   ctx.restore()
 }
