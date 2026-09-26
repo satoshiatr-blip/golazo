@@ -612,7 +612,7 @@ function drawCrestIntro(ctx: Ctx, C: string, t: number) {
   const k = clamp(t / t0, 0, 1)
   const land = t < t0 ? 2.4 - 1.4 * k * k : 1 + 0.06 * Math.exp(-(t - t0) * 9) * Math.cos((t - t0) * 30)
   const out = clamp((t - (CREST_END - 0.2)) / 0.2, 0, 1)
-  const h = 480 * land * (1 + out * 0.25)
+  const h = 300 * land * (1 + out * 0.25)
   const w = (crest.width * h) / crest.height
   ctx.save()
   ctx.globalAlpha = (t < t0 ? k : 1) * (1 - out)
