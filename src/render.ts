@@ -3,7 +3,7 @@ import {
   Input, Mp4OutputFormat, Output, QUALITY_HIGH, canEncodeAudio, canEncodeVideo,
 } from 'mediabunny'
 import type { Player, Project, Scene, ZoomRect } from './types'
-import { impact, riser, slowDown, whoosh } from './sfx'
+import { bell, impact, momentSound, riser, slowDown, softHit, whoosh } from './sfx'
 import { ENDING_SLAM, OPEN_SLAM, TFC_END, TFC_TIMES, drawEnding, openingDuration, drawOpening, type OpeningImage } from './opening'
 
 export const OUT_W = 1920
@@ -635,29 +635,30 @@ function scheduleSfx(ac: BaseAudioContext, dest: AudioNode, project: Project, to
   const out = ac.createGain()
   out.gain.value = project.sfxVolume
   out.connect(dest)
+  let seed = 0
   if (project.opening.style === 'tfc') {
-    impact(ac, out, TFC_TIMES.crest, 0.9)
-    whoosh(ac, out, TFC_TIMES.cut, 0.8)
+    bell(ac, out, TFC_TIMES.crest)
+    whoosh(ac, out, TFC_TIMES.cut, 0.8, seed++)
     impact(ac, out, TFC_TIMES.slam, 0.8)
   } else {
-    whoosh(ac, out, 0.35, 0.8)
+    whoosh(ac, out, 0.35, 0.8, seed++)
     impact(ac, out, OPEN_SLAM, 0.9)
   }
   const openSec = openingDuration(project)
   riser(ac, out, openSec - 1.8, openSec)
   let t = openSec
   for (const scene of project.scenes) {
-    whoosh(ac, out, t)
+    whoosh(ac, out, t, 1, seed++)
     const r = slowRange(scene)
     if (r) slowDown(ac, out, t + outTimeAt(scene, r[0]), 0.8)
-    if (scene.mark > scene.start && scene.mark < scene.end) impact(ac, out, t + outTimeAt(scene, scene.mark))
+    if (scene.mark > scene.start && scene.mark < scene.end) momentSound(ac, out, t + outTimeAt(scene, scene.mark), scene.kind)
     t += sceneOutDuration(scene)
   }
-  whoosh(ac, out, t)
+  whoosh(ac, out, t, 1, seed++)
   if (project.opening.style === 'tfc') {
-    impact(ac, out, t + TFC_END.crest, 0.6)
-    impact(ac, out, Math.min(total - 0.5, t + TFC_END.slam), 0.7)
-  } else impact(ac, out, Math.min(total - 0.5, t + ENDING_SLAM), 0.7)
+    bell(ac, out, t + TFC_END.crest, 0.7)
+    softHit(ac, out, Math.min(total - 0.5, t + TFC_END.slam))
+  } else softHit(ac, out, Math.min(total - 0.5, t + ENDING_SLAM))
 }
 
 async function readAudio(ac: BaseAudioContext, track: NonNullable<Awaited<ReturnType<Input['getPrimaryAudioTrack']>>>, start: number, end: number) {

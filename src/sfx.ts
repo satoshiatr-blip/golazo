@@ -71,7 +71,10 @@ function saturate(ac: BaseAudioContext, drive: number) {
 }
 
 // 音量の倍率。試合の歓声やBGMの邪魔をしない控えめな大きさにしている
-const LEVEL = { whoosh: 0.18, impact: 0.31, riser: 0.37, slow: 0.22 }
+const LEVEL = { whoosh: 0.18, impact: 0.31, riser: 0.37, slow: 0.22, kick: 0.75, net: 0.6, crowd: 0.3, glove: 0.75, bell: 0.4, shimmer: 0.3, soft: 0.3 }
+
+// 決まった seed から決まる疑似乱数（書き出すたびに同じ音になる）
+const rand = (n: number) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x) }
 
 function env(g: GainNode, t: number, peak: number, attack: number, decay: number) {
   // 最初の予約時刻より前は既定の音量1で鳴ってしまう（プツッという雑音になる）ので、最初から絞っておく
@@ -88,9 +91,14 @@ function panner(ac: BaseAudioContext, pan: number) {
 }
 
 // 斬撃ワイプの「シュッ」：左から右へ抜ける風切り音＋低い「ウォン」。center で最も強くなる
-export function whoosh(ac: BaseAudioContext, out: AudioNode, center: number, vol = 1) {
+// seed を変えると、高さ・長さ・抜ける向きが毎回少しずつ変わる（同じ音の繰り返しに聞こえないように）
+export function whoosh(ac: BaseAudioContext, out: AudioNode, center: number, vol = 1, seed = 0) {
   vol *= LEVEL.whoosh
-  const t0 = Math.max(0, center - 0.35), t1 = center + 0.35
+  const r1 = rand(seed * 3.1 + 1), r2 = rand(seed * 7.7 + 2)
+  const half = 0.26 + 0.18 * r2
+  const peak = 2300 + 2200 * r1
+  const dir = seed % 2 === 0 ? 1 : -1
+  const t0 = Math.max(0, center - half), t1 = center + half
   const wet = reverb(ac, out)
 
   const src = noiseSource(ac)
@@ -98,13 +106,13 @@ export function whoosh(ac: BaseAudioContext, out: AudioNode, center: number, vol
   bp.type = 'bandpass'
   bp.Q.value = 0.9
   bp.frequency.setValueAtTime(300, t0)
-  bp.frequency.exponentialRampToValueAtTime(3200, center)
+  bp.frequency.exponentialRampToValueAtTime(peak, center)
   bp.frequency.exponentialRampToValueAtTime(500, t1)
   const g = ac.createGain()
   env(g, center, 0.75 * vol, center - t0, t1 - center)
   const pan = ac.createStereoPanner()
-  pan.pan.setValueAtTime(-0.8, t0)
-  pan.pan.linearRampToValueAtTime(0.8, t1)
+  pan.pan.setValueAtTime(-0.8 * dir, t0)
+  pan.pan.linearRampToValueAtTime(0.8 * dir, t1)
   src.connect(bp).connect(g).connect(pan)
   pan.connect(out)
   pan.connect(wet)
@@ -308,15 +316,202 @@ export function slowDown(ac: BaseAudioContext, out: AudioNode, t: number, vol = 
   whoosh(ac, out, t + 0.12, 0.45 * vol / LEVEL.slow)
 }
 
+// ---- 場面ごとの音 ----
+
+function osc(ac: BaseAudioContext, type: OscillatorType, f0: number, f1: number, t: number, glide: number) {
+  const o = ac.createOscillator()
+  o.type = type
+  o.frequency.setValueAtTime(f0, t)
+  o.frequency.exponentialRampToValueAtTime(f1, t + glide)
+  return o
+}
+
+function burst(ac: BaseAudioContext, dest: AudioNode, t: number, type: BiquadFilterType, f: number, q: number, peak: number, decay: number, pan = 0) {
+  const n = noiseSource(ac)
+  const bf = ac.createBiquadFilter()
+  bf.type = type
+  bf.frequency.value = f
+  bf.Q.value = q
+  const g = ac.createGain()
+  env(g, t, peak, 0.002, decay)
+  n.connect(bf).connect(g).connect(panner(ac, pan)).connect(dest)
+  n.start(Math.max(0, t - 0.003))
+  n.stop(t + decay + 0.05)
+  return g
+}
+
+// ボールを蹴る「ドッ」：短い低音と、皮を叩く破裂音
+export function kick(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
+  vol *= LEVEL.kick
+  const o = osc(ac, 'sine', 140, 55, t, 0.08)
+  const g = ac.createGain()
+  env(g, t, 0.9 * vol, 0.002, 0.18)
+  const sat = saturate(ac, 2)
+  o.connect(sat.input)
+  sat.output.connect(g).connect(out)
+  o.start(t)
+  o.stop(t + 0.25)
+  burst(ac, out, t, 'bandpass', 1100, 1.2, 0.5 * vol, 0.06)
+  burst(ac, out, t, 'highpass', 2500, 0.7, 0.3 * vol, 0.02)
+}
+
+// ネットに刺さる「バサッ」：柔らかい低い当たりと、網がこすれる高い音が少し長く残る
+export function net(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
+  vol *= LEVEL.net
+  const wet = reverb(ac, out)
+  burst(ac, out, t, 'lowpass', 380, 0.7, 0.6 * vol, 0.22)
+  for (const [pan, dl] of [[-0.35, 0], [0.35, 0.018]] as const) {
+    const g = burst(ac, out, t + dl, 'bandpass', 2800, 0.6, 0.45 * vol, 0.5, pan)
+    g.connect(wet)
+  }
+  burst(ac, out, t + 0.01, 'highpass', 6500, 0.7, 0.2 * vol, 0.3)
+}
+
+// 観客の歓声：声の響き（母音の帯域）を強めたざわめきが、左右いっぱいに広がって盛り上がる。oo のときは「おおー」
+export function crowd(ac: BaseAudioContext, out: AudioNode, t: number, dur: number, vol = 1, oo = false) {
+  vol *= LEVEL.crowd
+  const wet = reverb(ac, out)
+  const formants = oo ? [[450, 3, 1], [820, 4, 0.6], [2400, 5, 0.15]] : [[720, 3, 1], [1200, 4, 0.7], [2600, 5, 0.25]]
+  for (const [pan, dl] of [[-0.75, 0], [0.75, 0.031], [0, 0.017]] as const) {
+    const n = noiseSource(ac)
+    const sum = ac.createGain()
+    for (const [f, q, a] of formants) {
+      const bf = ac.createBiquadFilter()
+      bf.type = 'bandpass'
+      bf.Q.value = q
+      bf.frequency.setValueAtTime(f * 0.85, t)
+      bf.frequency.linearRampToValueAtTime(f, t + 0.6)
+      const fg = ac.createGain()
+      fg.gain.value = a
+      n.connect(bf).connect(fg).connect(sum)
+    }
+    // 大勢の声のゆらぎ
+    const shape = ac.createGain()
+    shape.gain.value = 0.85
+    for (const [rate, d] of [[5.3, 0.12], [7.9, 0.08]] as const) {
+      const l = ac.createOscillator()
+      l.frequency.value = rate + dl * 20
+      const lg = ac.createGain()
+      lg.gain.value = d
+      l.connect(lg).connect(shape.gain)
+      l.start(t)
+      l.stop(t + dur + 1.3)
+    }
+    const g = ac.createGain()
+    g.gain.value = 0.0001
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(vol, t + (oo ? 0.25 : 0.4))
+    g.gain.setValueAtTime(vol, t + dur)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 1.2)
+    const p = panner(ac, pan)
+    sum.connect(shape).connect(g).connect(p)
+    p.connect(out)
+    p.connect(wet)
+    n.start(t + dl)
+    n.stop(t + dur + 1.3)
+  }
+}
+
+// キャッチの「パシッ」
+export function glove(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
+  vol *= LEVEL.glove
+  burst(ac, out, t, 'highpass', 1400, 0.8, 0.7 * vol, 0.05)
+  const o = osc(ac, 'sine', 190, 90, t, 0.06)
+  const g = ac.createGain()
+  env(g, t, 0.6 * vol, 0.002, 0.1)
+  o.connect(g).connect(out)
+  o.start(t)
+  o.stop(t + 0.15)
+}
+
+// エンブレムの着地：低い響きと、鐘のような余韻
+export function bell(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
+  vol *= LEVEL.bell
+  const wet = reverb(ac, out)
+  const sub = osc(ac, 'sine', 70, 38, t, 0.9)
+  const sg = ac.createGain()
+  env(sg, t, 0.8 * vol, 0.004, 1.3)
+  sub.connect(sg).connect(out)
+  sub.start(t)
+  sub.stop(t + 1.4)
+  for (const [ratio, a, d, pan] of [[1, 0.22, 2.2, -0.2], [2, 0.1, 1.5, 0.25], [2.76, 0.09, 1.1, -0.3], [5.4, 0.04, 0.6, 0.3]] as const) {
+    const o = ac.createOscillator()
+    o.type = 'sine'
+    o.frequency.value = 392 * ratio
+    const g = ac.createGain()
+    env(g, t, a * vol, 0.002, d)
+    const p = panner(ac, pan)
+    o.connect(g).connect(p)
+    p.connect(out)
+    p.connect(wet)
+    o.start(t)
+    o.stop(t + d + 0.1)
+  }
+  burst(ac, out, t, 'highpass', 3000, 0.7, 0.3 * vol, 0.03)
+}
+
+// エンディングの言葉：柔らかく深い響きと、きらめく高音
+export function softHit(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
+  const v = vol * LEVEL.soft
+  const wet = reverb(ac, out)
+  const sub = osc(ac, 'sine', 55, 36, t, 1.5)
+  const sg = ac.createGain()
+  env(sg, t, 0.8 * v, 0.02, 2.2)
+  sub.connect(sg)
+  sg.connect(out)
+  sg.connect(wet)
+  sub.start(t)
+  sub.stop(t + 2.3)
+  const g = burst(ac, out, t, 'lowpass', 900, 0.7, 0.35 * v, 0.5)
+  g.connect(wet)
+  shimmer(ac, out, t + 0.05, vol)
+}
+
+function shimmer(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
+  vol *= LEVEL.shimmer
+  const wet = reverb(ac, out)
+  ;[1318.5, 1568, 1975.5, 2637, 3136].forEach((f, i) => {
+    const o = ac.createOscillator()
+    o.type = 'sine'
+    o.frequency.value = f
+    const g = ac.createGain()
+    g.gain.value = 0.0001
+    g.gain.setValueAtTime(0.0001, t + i * 0.04)
+    g.gain.exponentialRampToValueAtTime(0.05 * vol, t + i * 0.04 + 0.25)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.04 + 1.9)
+    const p = panner(ac, i % 2 ? 0.5 : -0.5)
+    o.connect(g).connect(p)
+    p.connect(out)
+    p.connect(wet)
+    o.start(t + i * 0.04)
+    o.stop(t + i * 0.04 + 2)
+  })
+}
+
+// 見せ場の種類ごとの音：ゴールはシュート〜ネット〜歓声、セーブはキャッチ〜どよめき、好プレーは軽いキック〜小さな歓声
+export function momentSound(ac: BaseAudioContext, out: AudioNode, t: number, kind: 'goal' | 'save' | 'play') {
+  if (kind === 'goal') {
+    kick(ac, out, t)
+    net(ac, out, t + 0.14)
+    crowd(ac, out, t + 0.2, 2.2, 1)
+  } else if (kind === 'save') {
+    glove(ac, out, t)
+    crowd(ac, out, t + 0.05, 1.2, 0.8, true)
+  } else {
+    kick(ac, out, t, 0.7)
+    crowd(ac, out, t + 0.1, 1.0, 0.55)
+  }
+}
+
 let live: AudioContext | null = null
-// アプリ内でタップしたときの手応え用
-export function playImpactNow() {
+// マークしたとき・書き出し画面の試聴で、その場で鳴らす
+export function playMomentNow(kind: 'goal' | 'save' | 'play' = 'goal') {
   try {
     live ??= new AudioContext()
     if (live.state === 'suspended') live.resume()
     const master = live.createGain()
-    master.gain.value = 0.6
+    master.gain.value = 0.8
     master.connect(live.destination)
-    impact(live, master, live.currentTime + 0.01, 0.8)
+    momentSound(live, master, live.currentTime + 0.02, kind)
   } catch { /* 音が出せない環境では黙って続行 */ }
 }

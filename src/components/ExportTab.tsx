@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { exportHighlight, totalDuration } from '../render'
 import { loadOpeningImages } from '../opening'
 import { loadBgm, saveBgm } from '../idb'
-import { playImpactNow } from '../sfx'
+import { playMomentNow } from '../sfx'
 import { IconCheck, IconMusic, IconPhoto, IconSaveVideo } from './icons'
 import { Slam } from './brand'
 import { Button, Card, FilePicker, GroupLabel, Row, ScreenTitle, Portal, Slider, Toast, Toggle, fmt, useObjectUrl, type ProjectProps } from './ui'
@@ -154,7 +154,7 @@ export default function ExportTab({ project, setProject, files, addFiles }: Prop
                 <Slider label="効果音の音量" display={`${Math.round(project.sfxVolume * 100)}%`} min={0} max={1} step={0.05} value={project.sfxVolume}
                   onChange={v => setProject(p => ({ ...p, sfxVolume: v }))} />
               </div>
-              <Button className="shrink-0 text-sm" onClick={playImpactNow}>試聴</Button>
+              <Button className="shrink-0 text-sm" onClick={() => playMomentNow('goal')}>試聴</Button>
             </div>
           )}
         </Card>
