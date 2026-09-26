@@ -9,6 +9,7 @@ import ExportTab from './components/ExportTab'
 import { IconExport, IconFlag, IconLayers, IconSpark, IconTarget } from './components/icons'
 import OpeningTab from './components/OpeningTab'
 import { Logo, Wordmark } from './components/brand'
+import { Toast } from './components/ui'
 
 export type Tab = 'setup' | 'mark' | 'scenes' | 'opening' | 'export'
 const TABS = [
@@ -19,15 +20,28 @@ const TABS = [
   { id: 'export', label: '書き出し', Icon: IconExport },
 ] as const
 
+// 動画の長さ。大きな4K動画では video 要素が読み込みを終えないことがあるので、時間で打ち切り、読み込み部品で測り直す
 function readDuration(f: File) {
   return new Promise<number>(resolve => {
     const v = document.createElement('video')
+    const done = (d: number) => { resolve(d); URL.revokeObjectURL(v.src) }
     v.preload = 'metadata'
-    v.onloadedmetadata = () => { resolve(v.duration); URL.revokeObjectURL(v.src) }
-    v.onerror = () => resolve(0)
+    v.onloadedmetadata = () => done(v.duration)
+    v.onerror = () => done(0)
+    setTimeout(() => done(0), 10000)
     v.src = URL.createObjectURL(f)
-  })
+  }).then(d => (d > 0 && Number.isFinite(d) ? d : durationFromFile(f)))
 }
+
+async function durationFromFile(f: File) {
+  try {
+    const { Input, BlobSource, ALL_FORMATS } = await import('mediabunny')
+    const input = new Input({ source: new BlobSource(f), formats: ALL_FORMATS })
+    try { return await input.computeDuration() } finally { input.dispose() }
+  } catch { return 0 }
+}
+
+const baseName = (n: string) => n.replace(/\.[^.]+$/, '').toLowerCase()
 
 export default function App() {
   const [project, setProject] = useProject()
@@ -36,19 +50,37 @@ export default function App() {
 
   const go = (t: Tab) => setTab(t)
 
+  const [loading, setLoading] = useState('')
+
   async function addFiles(list: FileList) {
-    const next = new Map(files)
-    const metas: SourceMeta[] = []
-    for (const f of Array.from(list)) {
-      const key = sourceKey(f)
-      next.set(key, f)
-      metas.push({ key, name: f.name, size: f.size, duration: await readDuration(f) })
+    setLoading('動画を読み込んでいます…')
+    try {
+      const next = new Map(files)
+      const metas: SourceMeta[] = []
+      // 選び直しで iPhone が名前やサイズを変えて渡してくることがあるので、名前（拡張子を除く）か長さで元の動画に結び付ける
+      const missing = project.sources.filter(s => !files.has(s.key))
+      for (const f of Array.from(list)) {
+        let key = sourceKey(f)
+        const duration = await readDuration(f)
+        if (!project.sources.some(s => s.key === key)) {
+          const m = missing.find(s => baseName(s.name) === baseName(f.name))
+            ?? missing.find(s => duration > 0 && Math.abs(s.duration - duration) < 0.6)
+          if (m) {
+            key = m.key
+            missing.splice(missing.indexOf(m), 1)
+          }
+        }
+        next.set(key, f)
+        metas.push({ key, name: f.name, size: f.size, duration })
+      }
+      setFiles(next)
+      setProject(p => {
+        const known = new Set(p.sources.map(s => s.key))
+        return { ...p, sources: [...p.sources, ...metas.filter(m => !known.has(m.key))] }
+      })
+    } finally {
+      setLoading('')
     }
-    setFiles(next)
-    setProject(p => {
-      const known = new Set(p.sources.map(s => s.key))
-      return { ...p, sources: [...p.sources, ...metas.filter(m => !known.has(m.key))] }
-    })
   }
 
   function removeSource(key: string) {
@@ -58,6 +90,7 @@ export default function App() {
 
   return (
     <div className="bg-ink text-fg flex flex-col overflow-hidden" style={{ position: 'fixed', inset: 0 }}>
+      <Toast text={loading} />
       <header className="shrink-0 bg-ink/85 backdrop-blur-xl border-b border-line px-5 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Logo size={38} />
