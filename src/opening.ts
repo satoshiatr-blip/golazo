@@ -11,18 +11,25 @@ export const OPEN_SLAM = REVEAL + 0.5
 const SLASH_SEC = 0.3
 // 足元は下の帯の裏に隠れる位置。人物をなるべく大きく見せるため帯より下に置く
 const FLOOR = 1060
-// 言葉の上端（上の見出しの下）
-const MAIN_TOP = 140
+// 黄金比のグリッド：画面を 1:φ で分ける線を配置の基準にする
+// render.ts と相互に読み込むため、ここでは OUT_W/OUT_H を使わず画面サイズを直接書く
+const PHI = (1 + Math.sqrt(5)) / 2
+const GOLD_X = [1920 / PHI ** 2, 1920 / PHI] // 733, 1187
+const GOLD_Y = 1080 / PHI ** 2 // 413：言葉の下端＝人物の頭の上限
+// 言葉を置く帯（見出しの下から黄金線の少し上まで）
+const TEXT_TOP = 130
+const TEXT_BOTTOM = GOLD_Y - 40
 const BAND_Y = 972
 
-// 枚数ごとの並び（中心x・高さ）。先頭が主役で中央・最前面
+// 枚数ごとの並び（中心x・高さの比）。主役は右の黄金線上、ほかは 1/√φ、1/φ の大きさで左右へ
+const R1 = 1 / Math.sqrt(PHI), R2 = 1 / PHI
 const SLOTS: [number, number][][] = [
   [],
-  [[960, 800]],
-  [[770, 780], [1170, 780]],
-  [[960, 800], [570, 700], [1350, 700]],
-  [[790, 790], [1140, 790], [420, 680], [1510, 680]],
-  [[960, 810], [630, 730], [1290, 730], [320, 650], [1600, 650]],
+  [[GOLD_X[1], 1]],
+  [[GOLD_X[1], 1], [GOLD_X[0], R1]],
+  [[GOLD_X[1], 1], [GOLD_X[0], R1], [1560, R1]],
+  [[GOLD_X[1], 1], [GOLD_X[0], R1], [1560, R2], [400, R2]],
+  [[GOLD_X[1], 1], [GOLD_X[0], R1], [1540, R1], [400, R2], [1790, R2]],
 ]
 
 let crest: OffscreenCanvas | null = null
@@ -317,35 +324,34 @@ function drawPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) {
 }
 
 const mainLines = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3)
-const mainBase = (n: number) => (n === 1 ? 190 : n === 2 ? 140 : 104)
+// 文字の大きさも φ の段階（203 / 126 / 97）。複数行なら最後の行を √φ 倍
+const mainBase = (n: number) => (n === 1 ? 203 : n === 2 ? 126 : 97)
+const LAST_LINE = Math.sqrt(PHI)
 
-// 言葉の塊の中心。行数が増えても上端は見出しの下にそろえる
+// 言葉の塊は、見出しの下から黄金線までの帯の中央に置き、入りきらなければ縮める
 function mainCenter(text: string) {
   const lines = mainLines(text)
   const base = mainBase(lines.length)
-  const total = lines.reduce((a, _, i) => a + base * (i === lines.length - 1 && lines.length > 1 ? 1.2 : 1) * 1.02, 0)
-  return { cy: MAIN_TOP + (total / 2) * 1.07, half: (total / 2) * 1.07 }
+  const total = lines.reduce((a, _, i) => a + base * (i === lines.length - 1 && lines.length > 1 ? LAST_LINE : 1) * 1.02, 0) * 1.07
+  return { cy: (TEXT_TOP + TEXT_BOTTOM) / 2, fit: Math.min(1, (TEXT_BOTTOM - TEXT_TOP) / Math.max(1, total)) }
 }
 
-// メインの文字の下端。人物の頭がここより上に出ないようにする（傾き・縁取り・叩きつけ後の寄りの分も見込む）
-function mainBottom(text: string) {
-  if (!mainLines(text).length) return 140
-  const { cy, half } = mainCenter(text)
-  return cy + half + 60
-}
+// 人物の頭の上限は、言葉の有無にかかわらず上の黄金線
+const mainBottom = (_text: string) => GOLD_Y
 
 function drawPlayers(ctx: Ctx, images: OpeningImage[], u: number, top: number) {
   const n = Math.min(images.length, 5)
   const slots = SLOTS[n]
   for (let i = n - 1; i >= 0; i--) {
     const { photo, img } = images[i]
-    const [sx, sh] = slots[i]
+    const [sx, ratio] = slots[i]
     const k = ease(clamp((u - 0.08 - i * 0.07) / 0.32, 0, 1))
     if (k <= 0) continue
     const slide = (1 - k) * (i % 2 ? -260 : 260)
     // 頭が文字にかからないよう、はみ出す分だけ小さくする（足元の位置はそのまま）
     const room = FLOOR + photo.dy - top
-    const h = Math.min(sh * photo.scale, photo.cutout ? room : (room - 40) / 0.86)
+    const full = photo.cutout ? room : (room - 40) / 0.86
+    const h = Math.min(full * ratio * photo.scale, full)
     if (h <= 40) continue
     ctx.save()
     ctx.globalAlpha = clamp(k * 1.6, 0, 1)
@@ -405,10 +411,11 @@ function drawMain(ctx: Ctx, text: string, u: number, dark: boolean, face: { fami
   const scale = 1.7 - 0.7 * k + 0.02 * clamp(ds - 0.16, 0, 3)
   const shake = ds < 0.25 ? (rnd(Math.round(ds * 30)) - 0.5) * 18 * (1 - ds / 0.25) : 0
   const maxW = 1560
-  const base = mainBase(lines.length)
+  const { cy, fit } = mainCenter(text)
+  const base = mainBase(lines.length) * fit
   ctx.save()
   ctx.globalAlpha = clamp(k * 2, 0, 1)
-  ctx.translate(960 + shake, mainCenter(text).cy + shake * 0.5)
+  ctx.translate(960 + shake, cy + shake * 0.5)
   ctx.rotate(-0.06)
   ctx.scale(scale, scale)
   ctx.transform(1, 0, -face.skew, 1, 0, 0)
@@ -416,7 +423,7 @@ function drawMain(ctx: Ctx, text: string, u: number, dark: boolean, face: { fami
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
   const sizes = lines.map((l, i) => {
-    const want = base * (i === lines.length - 1 && lines.length > 1 ? 1.2 : 1)
+    const want = base * (i === lines.length - 1 && lines.length > 1 ? LAST_LINE : 1)
     ctx.font = `${want}px ${face.family}, ${FONT}`
     return Math.min(want, (want * maxW) / Math.max(1, ctx.measureText(l).width))
   })
@@ -454,16 +461,16 @@ function drawTop(ctx: Ctx, text: string, u: number, C: string) {
   ctx.save()
   ctx.globalAlpha = k
   // スマホの画面でも読める大きさ
-  ctx.font = `italic 800 54px ${FONT}`
+  ctx.font = `italic 800 48px ${FONT}`
   const w = Math.min(ctx.measureText(text).width, 1500) + 84
   const x = 100 - (1 - k) * 300, y = 32
   ctx.fillStyle = INK
-  slanted(ctx, x, y, w, 80, 18)
+  slanted(ctx, x, y, w, 78, 18)
   ctx.fillStyle = C
-  slanted(ctx, x - 26, y, 14, 80, 18)
+  slanted(ctx, x - 26, y, 14, 78, 18)
   ctx.fillStyle = '#fff'
   ctx.textBaseline = 'middle'
-  ctx.fillText(text, x + 40, y + 43, 1500)
+  ctx.fillText(text, x + 40, y + 41, 1500)
   ctx.restore()
 }
 
@@ -480,12 +487,12 @@ function drawBand(ctx: Ctx, text: string, badge: string, u: number, C: string, d
   const cy = BAND_Y + (OUT_H - BAND_Y) / 2 + 3
   if (text) {
     ctx.fillStyle = '#fff'
-    ctx.font = `800 46px ${FONT}`
+    ctx.font = `800 48px ${FONT}`
     ctx.fillText(text, 90, cy, badge ? 1250 : 1740)
   }
   if (badge) {
     const kb = ease(clamp((u - 0.95) / 0.2, 0, 1))
-    ctx.font = `italic 900 50px ${FONT}`
+    ctx.font = `italic 900 48px ${FONT}`
     const bw = Math.min(560, ctx.measureText(badge).width + 110)
     ctx.save()
     ctx.translate(OUT_W - 90 - bw / 2, cy)
@@ -639,7 +646,8 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
   ctx.save()
   ctx.translate(OUT_W / 2, OUT_H / 2)
   ctx.transform(1, 0, -0.32, 1, 0, 0)
-  const bw = 520, top = -OUT_H / 2 - 40, len = OUT_H + 80
+  // 白帯の幅は2本の黄金線の間（画面中央の高さで 733〜1187 に一致）
+  const bw = GOLD_X[1] - GOLD_X[0], top = -OUT_H / 2 - 40, len = OUT_H + 80
   ctx.fillStyle = 'rgba(255,255,255,0.93)'
   ctx.fillRect(-bw / 2, top - (1 - k) * 1200, bw, len)
   ctx.fillStyle = INK
@@ -732,7 +740,7 @@ function drawEndingText(ctx: Ctx, p: Project, t: number) {
   const shake = ds < 0.25 ? (rnd(Math.round(ds * 30) + 7) - 0.5) * 16 * (1 - ds / 0.25) : 0
   ctx.save()
   ctx.globalAlpha = clamp(k * 2, 0, 1)
-  ctx.translate(OUT_W / 2 + shake, 470 + shake * 0.5)
+  ctx.translate(OUT_W / 2 + shake, GOLD_Y + shake * 0.5)
   ctx.rotate(-0.05)
   const s = 1.6 - 0.6 * k
   ctx.scale(s, s)
@@ -740,7 +748,8 @@ function drawEndingText(ctx: Ctx, p: Project, t: number) {
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
-  let size = 240
+  // 大きさは φ の段階の 126（オープニングの2行時と同じ）
+  let size = 126
   ctx.font = `${size}px ${face.family}, ${FONT}`
   size = Math.min(size, (size * 1500) / Math.max(1, ctx.measureText(text).width))
   ctx.font = `${size}px ${face.family}, ${FONT}`
@@ -758,15 +767,15 @@ function drawEndingText(ctx: Ctx, p: Project, t: number) {
   ctx.fillText(text, 0, 0)
   ctx.restore()
 
-  // 下にチーム名と日付
-  const sub = [p.team, p.date.replaceAll('-', '.')].filter(Boolean).join('   ')
+  // 下に日付と対戦相手（チーム名は出さない）
+  const sub = defaultBottom(p)
   const k2 = ease(clamp((ds - 0.35) / 0.3, 0, 1))
   if (!sub || k2 <= 0) return
   ctx.save()
   ctx.globalAlpha = k2
   ctx.font = `italic 800 48px ${FONT}`
   const w = ctx.measureText(sub).width + 100
-  const x = OUT_W / 2 - w / 2 + (1 - k2) * 200, y = 690
+  const x = OUT_W / 2 - w / 2 + (1 - k2) * 200, y = GOLD_Y + 126
   ctx.fillStyle = INK
   slanted(ctx, x, y, w, 76, 18)
   ctx.fillStyle = '#fff'
