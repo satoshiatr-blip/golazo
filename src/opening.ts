@@ -530,8 +530,8 @@ function drawCornerBox(ctx: Ctx, text: string, u: number) {
 
 // ---- 高柳FC版：黒地にエンブレムが光って現れ、赤白の縦縞ポスターへ ----
 
-// エンブレムを見せる時間（ユーザー指定で2.5秒）。その後のポスター部分は約3秒
-const CREST_END = 2.5
+// エンブレムを見せる時間（ユーザー指定で2.0秒）。その後のポスター部分は約3秒
+const CREST_END = 2.0
 export const TFC_TIMES = { crest: 0.22, cut: CREST_END, slam: CREST_END + 0.55 }
 
 // オープニングの長さ：高柳FC版はエンブレムの分だけ長い
@@ -633,7 +633,7 @@ function drawCrestIntro(ctx: Ctx, C: string, t: number) {
   ctx.shadowBlur = 40
   ctx.shadowOffsetY = 16
   // 光は2回横切る
-  drawCrestShine(ctx, OUT_W / 2 - w / 2, OUT_H / 2 - h / 2, h, t < 1.3 ? (t - 0.4) / 0.45 : (t - 1.55) / 0.45)
+  drawCrestShine(ctx, OUT_W / 2 - w / 2, OUT_H / 2 - h / 2, h, t < 1.0 ? (t - 0.4) / 0.45 : (t - 1.15) / 0.45)
   ctx.restore()
   if (t >= t0 && t < t0 + 0.1) flash(ctx, 0.8 * (1 - (t - t0) / 0.1))
 }
