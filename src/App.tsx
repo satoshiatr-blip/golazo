@@ -82,7 +82,7 @@ export default function App() {
             const active = tab === id
             return (
               <button key={id} onClick={() => go(id)} className={`relative flex flex-col items-center gap-1 pt-2.5 pb-2 transition ${active ? 'text-cyan' : 'text-muted'}`}>
-                {active && <span className="absolute top-0 h-0.5 w-10 rounded-full bg-cyan shadow-[0_0_10px_#ffd400]" />}
+                {active && <span className="absolute top-0 h-0.5 w-10 rounded-full bg-cyan shadow-[0_0_10px_#22d3ee]" />}
                 <span className="relative text-2xl">
                   <Icon />
                   {id === 'scenes' && project.scenes.length > 0 && (

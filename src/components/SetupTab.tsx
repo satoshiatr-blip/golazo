@@ -29,11 +29,11 @@ export default function SetupTab({ project, setProject, go }: ProjectProps & { g
 
   return (
     <div className="space-y-6">
-      <div className="relative -mx-5 -mt-5 mb-2 px-6 pt-8 pb-7 overflow-hidden border-b border-line bg-[radial-gradient(ellipse_at_70%_20%,rgba(255,159,10,0.45),transparent_60%)]">
+      <div className="relative -mx-5 -mt-5 mb-2 px-6 pt-8 pb-7 overflow-hidden border-b border-line bg-[radial-gradient(ellipse_60%_70%_at_12%_0%,rgba(34,211,238,0.28),transparent_70%),radial-gradient(ellipse_60%_70%_at_88%_10%,rgba(217,70,239,0.28),transparent_70%),radial-gradient(ellipse_70%_60%_at_80%_100%,rgba(255,138,61,0.16),transparent_70%)]">
         <div className="absolute -inset-1/2 speedlines opacity-60 animate-[spin-slow_90s_linear_infinite]" />
         <div className="relative">
           <p className="text-[11px] font-black italic tracking-[0.3em] text-cyan">ONE SCENE → POSTER OPENING</p>
-          <h2 className="mt-2 text-[34px] leading-[1.15] font-black italic -skew-x-6 origin-left">あの一瞬に、<br /><span className="bg-gradient-to-r from-brand to-cyan bg-clip-text text-transparent">ポスターの幕開け</span>を。</h2>
+          <h2 className="mt-2 text-[34px] leading-[1.15] font-black italic -skew-x-6 origin-left">あの一瞬に、<br /><span className="bg-[linear-gradient(110deg,#22d3ee,#818cf8_35%,#e879f9_65%,#ffb627)] bg-clip-text text-transparent">ポスターの幕開け</span>を。</h2>
           <ol className="mt-5 grid grid-cols-5 gap-1.5 text-center">
             {['試合', 'マーク', '仕上げ', '幕開け', '書き出し'].map((t, i) => (
               <li key={t} className="rise rounded-xl bg-ink/60 backdrop-blur border border-line py-2" style={{ animationDelay: `${120 + i * 70}ms` }}>

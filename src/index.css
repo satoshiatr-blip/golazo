@@ -7,8 +7,8 @@
   --color-line: #222d45;
   --color-fg: #eaf0ff;
   --color-muted: #8d99b5;
-  --color-brand: #ff9f0a;
-  --color-cyan: #ffd400;
+  --color-brand: #b14dff;
+  --color-cyan: #38d9f5;
   --color-danger: #ff4d6a;
 }
 
@@ -32,7 +32,7 @@ input[type='range'] { accent-color: var(--color-cyan); }
 @keyframes shine { from { transform: translateX(-120%) skewX(-20deg) } to { transform: translateX(260%) skewX(-20deg) } }
 
 .speedlines {
-  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 212, 0, 0.22) 0deg 1.2deg, transparent 1.2deg 7deg);
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(56, 217, 245, 0.2) 0deg 1.2deg, transparent 1.2deg 7deg);
   mask-image: radial-gradient(circle at 50% 50%, transparent 18%, #000 60%);
 }
 .rise { animation: rise 0.45s cubic-bezier(.2, .8, .2, 1) both }

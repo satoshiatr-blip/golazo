@@ -139,7 +139,7 @@ export default function SceneEditor({ project, scene, file, onChange, onDelete, 
               ]} />
             </div>
             <button disabled={!url} onClick={playing ? stop : play} aria-label={playing ? '停止' : 'プレビュー再生'}
-              className="w-12 shrink-0 rounded-xl bg-gradient-to-br from-brand to-cyan text-ink text-xl grid place-items-center shadow-[0_0_18px_rgba(255,212,0,0.45)] active:scale-95 disabled:opacity-35">
+              className="w-12 shrink-0 rounded-xl bg-gradient-to-br from-cyan to-brand text-white text-xl grid place-items-center shadow-[0_0_18px_rgba(34,211,238,0.45)] active:scale-95 disabled:opacity-35">
               {playing ? <IconStop /> : <IconPlay />}
             </button>
           </div>

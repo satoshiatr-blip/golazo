@@ -17,8 +17,8 @@ type Props = ProjectProps & {
 
 const SPEEDS = [1, 2, 4]
 export const KIND_UI: Record<SceneKind, { Icon: ComponentType<SVGProps<SVGSVGElement>>; btn: string; dot: string }> = {
-  goal: { Icon: IconBall, btn: 'bg-gradient-to-br from-brand to-[#ffd400] text-white shadow-[0_8px_28px_-8px_rgba(255,159,10,0.9)]', dot: 'bg-brand' },
-  save: { Icon: IconGlove, btn: 'bg-raised text-cyan border border-cyan/60 shadow-[0_8px_28px_-10px_rgba(255,212,0,0.6)]', dot: 'bg-cyan' },
+  goal: { Icon: IconBall, btn: 'bg-gradient-to-br from-[#ff7a3d] to-[#ffb627] text-white shadow-[0_8px_28px_-8px_rgba(255,122,61,0.9)]', dot: 'bg-brand' },
+  save: { Icon: IconGlove, btn: 'bg-raised text-cyan border border-cyan/60 shadow-[0_8px_28px_-10px_rgba(34,211,238,0.6)]', dot: 'bg-cyan' },
   play: { Icon: IconSpark, btn: 'bg-fg text-ink', dot: 'bg-fg' },
 }
 
@@ -65,7 +65,7 @@ export default function MarkTab({ project, setProject, files, addFiles, removeSo
             <p className="font-bold text-lg">試合の動画を選ぶ</p>
             <p className="text-sm text-muted mt-1">前半・後半など複数あればまとめて選べます</p>
           </div>
-          <FilePicker onFiles={addFiles} className="w-full min-h-14 rounded-xl text-lg bg-gradient-to-r from-brand to-[#ffd400] text-white shadow-[0_6px_24px_-6px_rgba(255,159,10,0.7)]">
+          <FilePicker onFiles={addFiles} className="w-full min-h-14 rounded-xl text-lg bg-[linear-gradient(110deg,#22d3ee,#6366f1_38%,#d946ef_68%,#ff8a3d)] text-white shadow-[0_6px_24px_-6px_rgba(217,70,239,0.6)]">
             動画を選ぶ
           </FilePicker>
         </Card>

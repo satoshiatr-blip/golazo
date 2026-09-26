@@ -232,7 +232,7 @@ export default function ExportTab({ project, setProject, files, addFiles }: Prop
             <p className="text-3xl font-black italic tabular-nums text-cyan">{Math.round(progress.p * 100)}<span className="text-base">%</span></p>
           </div>
           <div className="h-2 bg-raised rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-brand to-cyan shadow-[0_0_12px_#ffd400] transition-all" style={{ width: `${progress.p * 100}%` }} />
+            <div className="h-full bg-gradient-to-r from-brand to-cyan shadow-[0_0_12px_#d946ef] transition-all" style={{ width: `${progress.p * 100}%` }} />
           </div>
           <p className="text-xs text-muted">画面を開いたままにしてください</p>
           <Button className="w-full" onClick={() => abortRef.current?.abort()}>中止</Button>

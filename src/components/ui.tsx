@@ -35,7 +35,7 @@ export const inputCls = 'w-full h-12 rounded-xl bg-raised border border-line px-
 
 type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }
 const VARIANT = {
-  primary: 'bg-gradient-to-r from-brand to-[#ffd400] text-ink shadow-[0_6px_24px_-6px_rgba(255,159,10,0.7)]',
+  primary: 'bg-[linear-gradient(110deg,#22d3ee,#6366f1_38%,#d946ef_68%,#ff8a3d)] text-white shadow-[0_6px_24px_-6px_rgba(217,70,239,0.6)]',
   secondary: 'bg-raised text-fg border border-line',
   ghost: 'text-muted',
   danger: 'text-danger',
@@ -47,7 +47,7 @@ export const Button = ({ variant = 'secondary', className = '', ...p }: BtnProps
 
 export const Toggle = ({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) => (
   <button role="switch" aria-checked={checked} aria-label={label} onClick={() => onChange(!checked)}
-    className={`relative w-13 h-8 rounded-full transition ${checked ? 'bg-brand shadow-[0_0_12px_rgba(255,159,10,0.6)]' : 'bg-line'}`}>
+    className={`relative w-13 h-8 rounded-full transition ${checked ? 'bg-brand shadow-[0_0_12px_rgba(177,77,255,0.6)]' : 'bg-line'}`}>
     <span className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
   </button>
 )
