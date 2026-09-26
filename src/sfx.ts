@@ -71,7 +71,7 @@ function saturate(ac: BaseAudioContext, drive: number) {
 }
 
 // 音量の倍率。試合の歓声やBGMの邪魔をしない控えめな大きさにしている
-const LEVEL = { whoosh: 0.18, impact: 0.31, riser: 0.37, slow: 0.22, kick: 0.75, net: 0.6, crowd: 0.3, glove: 0.75, bell: 0.4, shimmer: 0.3, soft: 0.3 }
+const LEVEL = { whoosh: 0.18, impact: 0.31, riser: 0.37, slow: 0.22, kick: 0.75, net: 0.6, glove: 0.75, bell: 0.4, shimmer: 0.3, soft: 0.3 }
 
 // 決まった seed から決まる疑似乱数（書き出すたびに同じ音になる）
 const rand = (n: number) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x) }
@@ -367,51 +367,6 @@ export function net(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
   burst(ac, out, t + 0.01, 'highpass', 6500, 0.7, 0.2 * vol, 0.3)
 }
 
-// 観客の歓声：声の響き（母音の帯域）を強めたざわめきが、左右いっぱいに広がって盛り上がる。oo のときは「おおー」
-export function crowd(ac: BaseAudioContext, out: AudioNode, t: number, dur: number, vol = 1, oo = false) {
-  vol *= LEVEL.crowd
-  const wet = reverb(ac, out)
-  const formants = oo ? [[450, 3, 1], [820, 4, 0.6], [2400, 5, 0.15]] : [[720, 3, 1], [1200, 4, 0.7], [2600, 5, 0.25]]
-  for (const [pan, dl] of [[-0.75, 0], [0.75, 0.031], [0, 0.017]] as const) {
-    const n = noiseSource(ac)
-    const sum = ac.createGain()
-    for (const [f, q, a] of formants) {
-      const bf = ac.createBiquadFilter()
-      bf.type = 'bandpass'
-      bf.Q.value = q
-      bf.frequency.setValueAtTime(f * 0.85, t)
-      bf.frequency.linearRampToValueAtTime(f, t + 0.6)
-      const fg = ac.createGain()
-      fg.gain.value = a
-      n.connect(bf).connect(fg).connect(sum)
-    }
-    // 大勢の声のゆらぎ
-    const shape = ac.createGain()
-    shape.gain.value = 0.85
-    for (const [rate, d] of [[5.3, 0.12], [7.9, 0.08]] as const) {
-      const l = ac.createOscillator()
-      l.frequency.value = rate + dl * 20
-      const lg = ac.createGain()
-      lg.gain.value = d
-      l.connect(lg).connect(shape.gain)
-      l.start(t)
-      l.stop(t + dur + 1.3)
-    }
-    const g = ac.createGain()
-    g.gain.value = 0.0001
-    g.gain.setValueAtTime(0.0001, t)
-    g.gain.exponentialRampToValueAtTime(vol, t + (oo ? 0.25 : 0.4))
-    g.gain.setValueAtTime(vol, t + dur)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 1.2)
-    const p = panner(ac, pan)
-    sum.connect(shape).connect(g).connect(p)
-    p.connect(out)
-    p.connect(wet)
-    n.start(t + dl)
-    n.stop(t + dur + 1.3)
-  }
-}
-
 // キャッチの「パシッ」
 export function glove(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
   vol *= LEVEL.glove
@@ -488,18 +443,15 @@ function shimmer(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
   })
 }
 
-// 見せ場の種類ごとの音：ゴールはシュート〜ネット〜歓声、セーブはキャッチ〜どよめき、好プレーは軽いキック〜小さな歓声
+// 見せ場の種類ごとの音：ゴールはシュート〜ネット、セーブはキャッチ、好プレーは軽いキック（歓声は入れない。試合の音に本物の歓声があるため）
 export function momentSound(ac: BaseAudioContext, out: AudioNode, t: number, kind: 'goal' | 'save' | 'play') {
   if (kind === 'goal') {
     kick(ac, out, t)
     net(ac, out, t + 0.14)
-    crowd(ac, out, t + 0.2, 2.2, 1)
   } else if (kind === 'save') {
     glove(ac, out, t)
-    crowd(ac, out, t + 0.05, 1.2, 0.8, true)
   } else {
     kick(ac, out, t, 0.7)
-    crowd(ac, out, t + 0.1, 1.0, 0.55)
   }
 }
 
