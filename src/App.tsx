@@ -63,7 +63,7 @@ export default function App() {
           <Logo size={38} />
           <div className="min-w-0">
             <h1 className="text-lg"><Wordmark /></h1>
-            <p className="text-xs text-muted truncate">{project.title ? `${project.title}${project.opponent ? `  VS ${project.opponent}` : ''}` : 'ワンシーンを、ポスター級の一本に'}</p>
+            <p className="text-xs text-muted truncate">{project.title ? `${project.title}${project.opponent ? `  VS ${project.opponent}` : ''}` : '一瞬の見せ場を、特別な一本に'}</p>
           </div>
         </div>
       </header>
