@@ -45,7 +45,7 @@ export const emptyOpening = (): Opening => ({
   main: '夢の続きへ。',
   bottom: '',
   badge: 'GOAL!',
-  ending: '最高の景色へ',
+  ending: '最高の景色を',
   corner: '',
   photos: [],
 })
@@ -56,6 +56,8 @@ export function useProject() {
     try {
       const raw = localStorage.getItem(KEY)
       if (raw) { const saved = JSON.parse(raw); p = { ...p, ...saved, opening: { ...p.opening, ...saved.opening } } }
+      // 初期値の誤り（「〜へ」→「〜を」）を、保存済みのデータでも直す
+      if (p.opening.ending === '最高の景色へ') p = { ...p, opening: { ...p.opening, ending: '最高の景色を' } }
     } catch { /* 破損時は新規 */ }
     const roster = readRoster()
     if (roster && p.players.length === 0) p = { ...p, team: p.team || roster.team, color: roster.color || p.color, players: roster.players }

@@ -216,7 +216,7 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
             <textarea className={`${inputCls} h-auto py-2.5 leading-snug`} rows={3} value={op.main} placeholder="夢の続きへ。" onChange={e => setOp({ main: e.target.value })} />
           </Field>
           <Field label="エンディングの言葉（動画の最後に出ます）">
-            <input className={inputCls} value={op.ending} placeholder="最高の景色へ" onChange={e => setOp({ ending: e.target.value })} />
+            <input className={inputCls} value={op.ending} placeholder="最高の景色を" onChange={e => setOp({ ending: e.target.value })} />
           </Field>
           <Field label="上の小さな見出し">
             <input className={inputCls} value={op.top} placeholder="この一瞬の、その先へ" onChange={e => setOp({ top: e.target.value })} />
