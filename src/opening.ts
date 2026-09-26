@@ -9,7 +9,9 @@ const REVEAL = 0.72
 // メインの文字を叩きつける時刻（効果音もここに合わせる）
 export const OPEN_SLAM = REVEAL + 0.5
 const SLASH_SEC = 0.3
-const FLOOR = 1000
+// 足元は下の帯の裏に隠れる位置。人物をなるべく大きく見せるため帯より下に置く
+const FLOOR = 1060
+const MAIN_Y = 230
 const BAND_Y = 972
 
 // 枚数ごとの並び（中心x・高さ）。先頭が主役で中央・最前面
@@ -207,14 +209,26 @@ function drawPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) {
   ctx.drawImage(getStrokes(), 0, 0)
   ctx.restore()
 
-  drawPlayers(ctx, images, u)
+  drawPlayers(ctx, images, u, mainBottom(op.main))
   drawMain(ctx, op.main, u, dark)
   drawTop(ctx, op.top, u, C)
   drawBand(ctx, op.bottom || defaultBottom(p), op.badge, u, C, dark)
   drawCornerBox(ctx, op.corner, u)
 }
 
-function drawPlayers(ctx: Ctx, images: OpeningImage[], u: number) {
+const mainLines = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3)
+const mainBase = (n: number) => (n === 1 ? 190 : n === 2 ? 140 : 104)
+
+// メインの文字の下端。人物の頭がここより上に出ないようにする（傾き・縁取り・叩きつけ後の寄りの分も見込む）
+function mainBottom(text: string) {
+  const lines = mainLines(text)
+  if (!lines.length) return 130
+  const base = mainBase(lines.length)
+  const total = lines.reduce((a, _, i) => a + base * (i === lines.length - 1 && lines.length > 1 ? 1.2 : 1) * 1.02, 0)
+  return MAIN_Y + (total / 2) * 1.07 + 60
+}
+
+function drawPlayers(ctx: Ctx, images: OpeningImage[], u: number, top: number) {
   const n = Math.min(images.length, 5)
   const slots = SLOTS[n]
   for (let i = n - 1; i >= 0; i--) {
@@ -223,7 +237,10 @@ function drawPlayers(ctx: Ctx, images: OpeningImage[], u: number) {
     const k = ease(clamp((u - 0.08 - i * 0.07) / 0.32, 0, 1))
     if (k <= 0) continue
     const slide = (1 - k) * (i % 2 ? -260 : 260)
-    const h = sh * photo.scale
+    // 頭が文字にかからないよう、はみ出す分だけ小さくする（足元の位置はそのまま）
+    const room = FLOOR + photo.dy - top
+    const h = Math.min(sh * photo.scale, photo.cutout ? room : (room - 40) / 0.86)
+    if (h <= 40) continue
     ctx.save()
     ctx.globalAlpha = clamp(k * 1.6, 0, 1)
     ctx.shadowColor = 'rgba(0,0,0,0.45)'
@@ -267,7 +284,7 @@ function drawPlayers(ctx: Ctx, images: OpeningImage[], u: number) {
 
 // メインの文字：太い斜体を叩きつけて止める。改行で最大3行、最後の行を大きく
 function drawMain(ctx: Ctx, text: string, u: number, dark: boolean) {
-  const lines = text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3)
+  const lines = mainLines(text)
   if (!lines.length) return
   const ds = u - (OPEN_SLAM - REVEAL)
   if (ds < 0) return
@@ -275,10 +292,10 @@ function drawMain(ctx: Ctx, text: string, u: number, dark: boolean) {
   const scale = 1.7 - 0.7 * k + 0.02 * clamp(ds - 0.16, 0, 3)
   const shake = ds < 0.25 ? (rnd(Math.round(ds * 30)) - 0.5) * 18 * (1 - ds / 0.25) : 0
   const maxW = 1560
-  const base = lines.length === 1 ? 210 : lines.length === 2 ? 150 : 112
+  const base = mainBase(lines.length)
   ctx.save()
   ctx.globalAlpha = clamp(k * 2, 0, 1)
-  ctx.translate(960 + shake, 250 + shake * 0.5)
+  ctx.translate(960 + shake, MAIN_Y + shake * 0.5)
   ctx.rotate(-0.06)
   ctx.scale(scale, scale)
   ctx.transform(1, 0, -0.2, 1, 0, 0)
@@ -522,7 +539,7 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
   ctx.strokeText('TFC', OUT_W / 2 - 40 + u * 30, OUT_H / 2 + 80)
   ctx.restore()
 
-  drawPlayers(ctx, images, u)
+  drawPlayers(ctx, images, u, mainBottom(op.main))
   // 叩きつけの時刻をポスター版とそろえた相対時間で渡す
   drawMain(ctx, op.main, u - (TFC_TIMES.slam - CREST_END) + (OPEN_SLAM - REVEAL), true)
   drawTop(ctx, op.top, u, C)
