@@ -9,42 +9,52 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#0a0800;font-family:'Noto Sans JP',sans-serif;color:#fff8e0;max-width:480px;margin:0 auto;}
+body{background:#060818;font-family:'Noto Sans JP',sans-serif;color:#eef2ff;max-width:480px;margin:0 auto;}
 .sec{padding:48px 20px;border-bottom:1px solid rgba(255,255,255,0.05);}
-.lbl{font-size:9px;font-weight:700;letter-spacing:3px;color:#ffd400;text-transform:uppercase;margin-bottom:4px;}
+.lbl{font-size:9px;font-weight:700;letter-spacing:3px;color:#ffb627;text-transform:uppercase;margin-bottom:4px;}
 .sech{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;margin-bottom:20px;}
-.hero{padding:56px 20px 40px;border-bottom:1px solid rgba(255,255,255,0.05);background:radial-gradient(ellipse 120% 60% at 50% 0%, rgba(255,212,0,0.08) 0%, transparent 70%);}
-.hero-tag{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:700;letter-spacing:2px;color:#ffd400;background:rgba(255,212,0,0.08);border:1px solid rgba(255,212,0,0.2);padding:5px 12px;border-radius:100px;margin-bottom:20px;}
-.live{width:6px;height:6px;border-radius:50%;background:#ffd400;animation:blink 2s infinite;}
+.hero{padding:56px 20px 40px;border-bottom:1px solid rgba(255,255,255,0.05);background:radial-gradient(ellipse 120% 60% at 50% 0%, rgba(255,182,39,0.08) 0%, transparent 70%);}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:700;letter-spacing:2px;color:#ffb627;background:rgba(255,182,39,0.08);border:1px solid rgba(255,182,39,0.2);padding:5px 12px;border-radius:100px;margin-bottom:20px;}
+.live{width:6px;height:6px;border-radius:50%;background:#ffb627;animation:blink 2s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 .hero-h1{font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:3px;line-height:0.95;margin-bottom:14px;}
-.hero-h1 em{color:#ffd400;font-style:normal;display:block;}
-.hero-desc{font-size:13px;color:rgba(255,248,224,0.55);line-height:1.7;margin-bottom:24px;}
-.hero-desc strong{color:#fff8e0;}
+.hero-h1 em{color:#ffb627;font-style:normal;display:block;}
+.hero-desc{font-size:13px;color:rgba(238,242,255,0.55);line-height:1.7;margin-bottom:24px;}
+.hero-desc strong{color:#eef2ff;}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;margin-top:20px;}
-.stat{background:#0a0800;padding:14px 6px;text-align:center;}
-.stat-n{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#ffd400;line-height:1;}
-.stat-l{font-size:9px;color:rgba(255,248,224,0.4);margin-top:2px;letter-spacing:0.3px;}
-.cta-box{background:rgba(255,212,0,0.12);border:2px solid rgba(255,212,0,0.5);border-radius:14px;padding:18px 20px;text-align:center;}
-.cta-box-l{font-size:11px;color:rgba(255,212,0,0.6);letter-spacing:2px;font-weight:700;margin-bottom:6px;}
-.cta-box-m{font-size:22px;font-weight:900;color:#ffd400;letter-spacing:1px;}
-.cta-box-u{font-size:10px;color:rgba(255,212,0,0.45);margin-top:6px;font-family:'Space Mono',monospace;word-break:break-all;}
+.stat{background:#060818;padding:14px 6px;text-align:center;}
+.stat-n{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#ffb627;line-height:1;}
+.stat-l{font-size:9px;color:rgba(238,242,255,0.4);margin-top:2px;letter-spacing:0.3px;}
+.cta-box{background:rgba(255,182,39,0.12);border:2px solid rgba(255,182,39,0.5);border-radius:14px;padding:18px 20px;text-align:center;}
+.cta-box-l{font-size:11px;color:rgba(255,182,39,0.6);letter-spacing:2px;font-weight:700;margin-bottom:6px;}
+.cta-box-m{font-size:22px;font-weight:900;color:#ffb627;letter-spacing:1px;}
+.cta-box-u{font-size:10px;color:rgba(255,182,39,0.45);margin-top:6px;font-family:'Space Mono',monospace;word-break:break-all;}
 .steps{display:flex;flex-direction:column;gap:8px;}
 .step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;}
-.sn{font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(255,212,0,0.2);line-height:1;width:28px;flex-shrink:0;text-align:center;}
+.sn{font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(255,182,39,0.2);line-height:1;width:28px;flex-shrink:0;text-align:center;}
 .st{font-weight:900;font-size:13px;}
-.sd{font-size:11px;color:rgba(255,248,224,0.45);margin-top:2px;line-height:1.5;}
-.stag{margin-left:auto;flex-shrink:0;font-size:9px;font-weight:700;color:rgba(255,212,0,0.6);background:rgba(255,212,0,0.07);border:1px solid rgba(255,212,0,0.15);padding:3px 8px;border-radius:100px;white-space:nowrap;}
+.sd{font-size:11px;color:rgba(238,242,255,0.45);margin-top:2px;line-height:1.5;}
+.stag{margin-left:auto;flex-shrink:0;font-size:9px;font-weight:700;color:rgba(255,182,39,0.6);background:rgba(255,182,39,0.07);border:1px solid rgba(255,182,39,0.15);padding:3px 8px;border-radius:100px;white-space:nowrap;}
 .feats{display:flex;flex-direction:column;gap:10px;}
-.feat{display:flex;gap:12px;background:rgba(255,212,0,0.02);border:1px solid rgba(255,212,0,0.15);border-radius:12px;padding:14px 16px;}
+.feat{display:flex;gap:12px;background:rgba(255,182,39,0.02);border:1px solid rgba(255,182,39,0.15);border-radius:12px;padding:14px 16px;}
 .fi{font-size:22px;flex-shrink:0;line-height:1;}
-.ft{font-weight:900;font-size:13px;color:#fff8e0;margin-bottom:3px;}
-.fd{font-size:11px;color:rgba(255,248,224,0.55);line-height:1.6;}
+.ft{font-weight:900;font-size:13px;color:#eef2ff;margin-bottom:3px;}
+.fd{font-size:11px;color:rgba(238,242,255,0.55);line-height:1.6;}
 .cta{padding:48px 20px;text-align:center;}
 .cta-h{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:4px;margin-bottom:8px;}
-.cta-s{font-size:12px;color:rgba(255,248,224,0.4);margin-bottom:24px;letter-spacing:1px;}
+.cta-s{font-size:12px;color:rgba(238,242,255,0.4);margin-bottom:24px;letter-spacing:1px;}
 .chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
-.chip{font-size:10px;font-weight:700;letter-spacing:0.5px;padding:5px 11px;border-radius:100px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:rgba(255,248,224,0.4);}
+.chip{font-size:10px;font-weight:700;letter-spacing:0.5px;padding:5px 11px;border-radius:100px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:rgba(238,242,255,0.4);}
+
+:root{--g:linear-gradient(120deg,#22d3ee 0%,#3b82f6 30%,#d946ef 58%,#ff7a3d 80%,#ffd400 100%);}
+.hero{background:radial-gradient(ellipse 70% 45% at 15% 0%,rgba(34,211,238,0.16) 0%,transparent 70%),radial-gradient(ellipse 70% 45% at 85% 5%,rgba(217,70,239,0.16) 0%,transparent 70%),radial-gradient(ellipse 80% 40% at 80% 60%,rgba(255,150,40,0.10) 0%,transparent 70%);}
+.hero::before{content:"";display:block;width:92px;height:92px;border-radius:22%;background:url(icon-512.png) center/cover;margin-bottom:22px;box-shadow:0 0 28px rgba(59,130,246,0.45),0 0 52px rgba(217,70,239,0.3);}
+.hero-h1 em{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.cta-box{border:2px solid transparent;background:linear-gradient(#0b0f24,#0b0f24) padding-box,var(--g) border-box;box-shadow:0 0 32px rgba(217,70,239,0.18);}
+.cta-box-m{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.stat-n{background:linear-gradient(120deg,#22d3ee,#d946ef 55%,#ffb627);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.feat{border-color:rgba(120,140,255,0.16);}
+.live{background:#22d3ee;box-shadow:0 0 8px #22d3ee;}
 </style>
 </head>
 <body>
@@ -52,7 +62,7 @@ body{background:#0a0800;font-family:'Noto Sans JP',sans-serif;color:#fff8e0;max-
 <div class="hero">
   <div class="hero-tag"><span class="live"></span>少年サッカー向け 無料Webアプリ</div>
   <div class="hero-h1">GOL<em>AZO</em></div>
-  <p class="hero-desc">試合動画のワンシーンに、<strong>ポスターのようなオープニング</strong>を付けて1本に。<br>写真の切り抜きも、動画の編集も、すべて端末の中で。</p>
+  <p class="hero-desc">試合のワンシーンを切り抜いて、<strong>ポスターのようなオープニングとエンディング</strong>で包む。<br>写真の切り抜きも、動画の編集も、すべて端末の中で。</p>
   <a href="https://satoshiatr-blip.github.io/golazo/" target="_blank" style="text-decoration:none;display:block;">
     <div class="cta-box">
       <div class="cta-box-l">インストール不要・完全無料</div>
@@ -95,33 +105,33 @@ body{background:#0a0800;font-family:'Noto Sans JP',sans-serif;color:#fff8e0;max-
   </div>
 </div>
 
-<div class="sec" style="background:rgba(255,212,0,0.015);">
+<div class="sec" style="background:rgba(255,182,39,0.015);">
   <div class="lbl">Feature</div>
   <h2 class="sech">できること</h2>
   <div class="feats">
     <div class="feat">
       <div class="fi">✂️</div>
-      <div><div class="ft">人物の自動切り抜き</div><div class="fd">写真を選ぶだけで背景を消して並べる。写真は端末の外に出ません</div></div>
+      <div><div class="ft">人物の自動切り抜き</div><div class="fd">写真を選ぶだけで背景を消し、明るさをそろえて縁に光を入れる。写真は端末の外に出ません</div></div>
     </div>
     <div class="feat">
       <div class="fi">🖌️</div>
-      <div><div class="ft">ポスター風オープニング</div><div class="fd">渦から開いて、筆の跡と大きな文字を叩きつける4秒の幕開け</div></div>
+      <div><div class="ft">ポスター風オープニング</div><div class="fd">渦から開いて、筆の跡と筆文字を叩きつける4秒の幕開け。エンディングも同じ世界観で</div></div>
+    </div>
+    <div class="feat">
+      <div class="fi">🛡️</div>
+      <div><div class="ft">チーム版デザイン</div><div class="fd">エンブレムが光って現れ、赤白の縦縞が走るチームカラーのオープニング</div></div>
+    </div>
+    <div class="feat">
+      <div class="fi">📐</div>
+      <div><div class="ft">黄金比のレイアウト</div><div class="fd">主役の位置・文字の大きさ・人物の大小を黄金比でそろえ、写真を変えても崩れない</div></div>
     </div>
     <div class="feat">
       <div class="fi">✏️</div>
-      <div><div class="ft">文字は自由に</div><div class="fd">メインの言葉・見出し・下の帯・ボックスを好きな文字に</div></div>
-    </div>
-    <div class="feat">
-      <div class="fi">🎨</div>
-      <div><div class="ft">テーマカラー</div><div class="fd">8色から選ぶと、オープニングもテロップも同じ色に</div></div>
+      <div><div class="ft">文字は自由に</div><div class="fd">メインの言葉・見出し・下の帯・エンディングの言葉を好きな文字に</div></div>
     </div>
     <div class="feat">
       <div class="fi">🔍</div>
-      <div><div class="ft">ズーム・スロー</div><div class="fd">MATCHCUTと同じく、画角とスローをシーンごとに調整</div></div>
-    </div>
-    <div class="feat">
-      <div class="fi">🎵</div>
-      <div><div class="ft">BGM・効果音</div><div class="fd">オープニングの叩きつけに合わせた効果音＋好きな曲</div></div>
+      <div><div class="ft">ズーム・スロー・BGM</div><div class="fd">MATCHCUTと同じく、画角とスローをシーンごとに調整。効果音と好きな曲も</div></div>
     </div>
   </div>
 </div>
