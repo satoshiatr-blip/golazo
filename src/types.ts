@@ -36,6 +36,8 @@ export type Opening = {
   main: string
   bottom: string
   badge: string
+  // ポスター版のエンディングの言葉
+  ending: string
   corner: string
   photos: OpeningPhoto[]
 }

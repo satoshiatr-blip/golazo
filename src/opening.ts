@@ -676,3 +676,102 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
   drawCrestShine(ctx, OUT_W - 60 - (crest.width * h) / crest.height, 34, h, (u - 0.9) / 0.5)
   ctx.restore()
 }
+
+// ---- ポスター版のエンディング：同じ黄色地と筆跡に、締めの言葉を叩きつけて暗転 ----
+
+export const ENDING_SLAM = 0.55
+
+export function drawEnding(ctx: Ctx, p: Project, t: number, dur: number) {
+  const C = p.color
+  const frame = Math.round(t * 30)
+  const zoom = 1 + 0.04 * (t / dur)
+  ctx.save()
+  ctx.translate(OUT_W / 2, OUT_H / 2)
+  ctx.scale(zoom, zoom)
+  ctx.translate(-OUT_W / 2, -OUT_H / 2)
+  ctx.fillStyle = C
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  const v = ctx.createRadialGradient(OUT_W / 2, OUT_H / 2, OUT_H * 0.2, OUT_W / 2, OUT_H / 2, OUT_W * 0.75)
+  v.addColorStop(0, 'rgba(255,255,255,0.15)')
+  v.addColorStop(1, 'rgba(0,0,0,0.35)')
+  ctx.fillStyle = v
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  // オープニングと左右反転した筆跡を、右から左へ塗り広げる
+  const edge = OUT_W + 600 - ease(clamp((t - 0.1) / 0.4, 0, 1)) * (OUT_W + 1300)
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(OUT_W + 10, -10)
+  ctx.lineTo(edge, -10)
+  ctx.lineTo(edge - 600, OUT_H + 10)
+  ctx.lineTo(OUT_W + 10, OUT_H + 10)
+  ctx.closePath()
+  ctx.clip()
+  ctx.translate(OUT_W, 0)
+  ctx.scale(-1, 1)
+  ctx.drawImage(getStrokes(), 0, 0)
+  ctx.restore()
+  drawEndingText(ctx, p, t)
+  ctx.restore()
+  drawGrain(ctx, frame)
+  const ds = t - ENDING_SLAM
+  if (ds >= 0 && ds < 0.1) flash(ctx, 0.55 * (1 - ds / 0.1))
+  if (t < SLASH_SEC) drawSlash(ctx, C, t / SLASH_SEC, frame)
+  if (dur - t < 0.6) {
+    ctx.fillStyle = `rgba(0,0,0,${1 - (dur - t) / 0.6})`
+    ctx.fillRect(0, 0, OUT_W, OUT_H)
+  }
+}
+
+function drawEndingText(ctx: Ctx, p: Project, t: number) {
+  const text = p.opening.ending.trim()
+  const ds = t - ENDING_SLAM
+  if (!text || ds < 0) return
+  const dark = isDark(p.color)
+  const face = MAIN_FACE.poster
+  const k = ease(clamp(ds / 0.16, 0, 1))
+  const shake = ds < 0.25 ? (rnd(Math.round(ds * 30) + 7) - 0.5) * 16 * (1 - ds / 0.25) : 0
+  ctx.save()
+  ctx.globalAlpha = clamp(k * 2, 0, 1)
+  ctx.translate(OUT_W / 2 + shake, 470 + shake * 0.5)
+  ctx.rotate(-0.05)
+  const s = 1.6 - 0.6 * k
+  ctx.scale(s, s)
+  ctx.transform(1, 0, -face.skew, 1, 0, 0)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  let size = 240
+  ctx.font = `${size}px ${face.family}, ${FONT}`
+  size = Math.min(size, (size * 1500) / Math.max(1, ctx.measureText(text).width))
+  ctx.font = `${size}px ${face.family}, ${FONT}`
+  ctx.lineWidth = size * 0.16
+  ctx.strokeStyle = dark ? INK : '#fff'
+  ctx.shadowColor = 'rgba(0,0,0,0.35)'
+  ctx.shadowBlur = 24
+  ctx.shadowOffsetY = 10
+  ctx.strokeText(text, 0, 0)
+  ctx.shadowColor = 'transparent'
+  ctx.fillStyle = dark ? '#fff' : INK
+  ctx.lineWidth = size * face.bold
+  ctx.strokeStyle = ctx.fillStyle
+  ctx.strokeText(text, 0, 0)
+  ctx.fillText(text, 0, 0)
+  ctx.restore()
+
+  // 下にチーム名と日付
+  const sub = [p.team, p.date.replaceAll('-', '.')].filter(Boolean).join('   ')
+  const k2 = ease(clamp((ds - 0.35) / 0.3, 0, 1))
+  if (!sub || k2 <= 0) return
+  ctx.save()
+  ctx.globalAlpha = k2
+  ctx.font = `italic 800 48px ${FONT}`
+  const w = ctx.measureText(sub).width + 100
+  const x = OUT_W / 2 - w / 2 + (1 - k2) * 200, y = 690
+  ctx.fillStyle = INK
+  slanted(ctx, x, y, w, 76, 18)
+  ctx.fillStyle = '#fff'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(sub, x + w / 2, y + 41)
+  ctx.restore()
+}

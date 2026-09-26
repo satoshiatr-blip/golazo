@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Tab } from '../App'
 import { cutoutPerson, shrinkPhoto } from '../cutout'
 import { savePhoto } from '../idb'
-import { OPEN_SEC, OUT_W } from '../render'
-import { defaultBottom, drawOpening, loadOpeningImages, type OpeningImage } from '../opening'
+import { CLOSE_SEC, OPEN_SEC, OUT_W } from '../render'
+import { defaultBottom, drawEnding, drawOpening, loadOpeningImages, type OpeningImage } from '../opening'
 import type { Opening, OpeningPhoto, OpeningStyle } from '../types'
 import { uid } from '../types'
 import { IconBack, IconPlay, IconPlus, IconStop, IconTrash } from './icons'
@@ -21,6 +21,7 @@ const REDS = [
 ]
 // 止めているときに見せる瞬間（全部そろって、まだ場面転換が始まる前）
 const STILL_T = 3.3
+const END_STILL_T = 1.8
 
 // 写真の読み込みは「どの画像を使うか」が変わったときだけ。大きさ・位置の変更では読み直さない
 export function useOpeningImages(photos: OpeningPhoto[]) {
@@ -45,6 +46,10 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
   const images = useOpeningImages(op.photos)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [playing, setPlaying] = useState(false)
+  // プレビューで見せる場面（エンディングはポスター版だけ）
+  const [view, setView] = useState<'open' | 'end'>('open')
+  const scene = op.style === 'poster' ? view : 'open'
+  const sceneDur = scene === 'end' ? CLOSE_SEC : OPEN_SEC
   const [selected, setSelected] = useState<string | null>(null)
   const [working, setWorking] = useState<Set<string>>(new Set())
   const [notice, setNotice] = useState('')
@@ -71,22 +76,24 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
     if (c.width !== Math.round(w)) { c.width = Math.round(w); c.height = Math.round(w * 9 / 16) }
     const ctx = c.getContext('2d')!
     ctx.setTransform(c.width / OUT_W, 0, 0, c.width / OUT_W, 0, 0)
-    drawOpening(ctx, project, images, t, OPEN_SEC)
+    if (scene === 'end') drawEnding(ctx, project, t, CLOSE_SEC)
+    else drawOpening(ctx, project, images, t, OPEN_SEC)
   }
-  useEffect(() => { if (!playing) drawRef.current(STILL_T) })
+  useEffect(() => { if (!playing) drawRef.current(scene === 'end' ? END_STILL_T : STILL_T) })
   useEffect(() => {
     if (!playing) return
     let raf = 0
     const t0 = performance.now()
     const tick = () => {
       const t = (performance.now() - t0) / 1000
-      if (t >= OPEN_SEC) { setPlaying(false); return }
+      if (t >= sceneDur) { setPlaying(false); return }
       drawRef.current(t)
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [playing])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, scene])
 
   async function addPhotos(list: FileList) {
     const room = MAX_PHOTOS - op.photos.length
@@ -147,6 +154,12 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
       <div className="sticky top-0 z-10 -mx-5 px-5 pb-3 bg-ink">
         <canvas ref={canvasRef} className="w-full aspect-video rounded-xl bg-black border border-line" />
         <div className="mt-2 flex gap-2">
+          {op.style === 'poster' && (
+            <div className="w-40 shrink-0">
+              <Segmented<'open' | 'end'> value={view} onChange={v => { setPlaying(false); setView(v) }}
+                options={[{ v: 'open', label: '始まり' }, { v: 'end', label: '終わり' }]} />
+            </div>
+          )}
           <Button variant={playing ? 'secondary' : 'primary'} className="flex-1 min-h-11" onClick={() => setPlaying(v => !v)}>
             {playing ? <><IconStop />止める</> : <><IconPlay />動きを見る</>}
           </Button>
@@ -204,6 +217,11 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
           <Field label="メインの言葉（改行すると2〜3行。最後の行が大きくなります）">
             <textarea className={`${inputCls} h-auto py-2.5 leading-snug`} rows={3} value={op.main} placeholder="夢の続きへ。" onChange={e => setOp({ main: e.target.value })} />
           </Field>
+          {op.style === 'poster' && (
+            <Field label="エンディングの言葉（動画の最後に出ます）">
+              <input className={inputCls} value={op.ending} placeholder="最高の景色へ" onChange={e => setOp({ ending: e.target.value })} />
+            </Field>
+          )}
           <Field label="上の小さな見出し">
             <input className={inputCls} value={op.top} placeholder="この一瞬の、その先へ" onChange={e => setOp({ top: e.target.value })} />
           </Field>

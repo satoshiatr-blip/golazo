@@ -4,14 +4,14 @@ import {
 } from 'mediabunny'
 import type { Player, Project, Scene, ZoomRect } from './types'
 import { impact, riser, slowDown, whoosh } from './sfx'
-import { OPEN_SLAM, TFC_TIMES, drawOpening, type OpeningImage } from './opening'
+import { ENDING_SLAM, OPEN_SLAM, TFC_TIMES, drawEnding, drawOpening, type OpeningImage } from './opening'
 
 export const OUT_W = 1920
 export const OUT_H = 1080
 export const FPS = 30
 export const SLOW_RATE = 0.5
 export const OPEN_SEC = 4
-const CLOSE_SEC = 3
+export const CLOSE_SEC = 3
 const SAMPLE_RATE = 48000
 export const FONT = '-apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif'
 
@@ -551,7 +551,8 @@ export async function exportHighlight({ project, files, bgm, openingImages, onPr
       }
     }
     for (let i = 0; i < CLOSE_SEC * FPS; i++) {
-      drawCard(ctx, project, 'close', i / FPS, CLOSE_SEC)
+      if (project.opening.style === 'poster') drawEnding(ctx, project, i / FPS, CLOSE_SEC)
+      else drawCard(ctx, project, 'close', i / FPS, CLOSE_SEC)
       await emit()
     }
 
@@ -645,7 +646,7 @@ function scheduleSfx(ac: BaseAudioContext, dest: AudioNode, project: Project, to
     t += sceneOutDuration(scene)
   }
   whoosh(ac, out, t)
-  impact(ac, out, Math.min(total - 0.5, t + 0.15), 0.7)
+  impact(ac, out, Math.min(total - 0.5, t + (project.opening.style === 'poster' ? ENDING_SLAM : 0.15)), 0.7)
 }
 
 async function readAudio(ac: BaseAudioContext, track: NonNullable<Awaited<ReturnType<Input['getPrimaryAudioTrack']>>>, start: number, end: number) {

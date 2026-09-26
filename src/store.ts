@@ -45,6 +45,7 @@ export const emptyOpening = (): Opening => ({
   main: '夢の続きへ。',
   bottom: '',
   badge: 'GOAL!',
+  ending: '最高の景色へ',
   corner: '',
   photos: [],
 })
