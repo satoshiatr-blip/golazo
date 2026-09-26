@@ -71,7 +71,7 @@ function saturate(ac: BaseAudioContext, drive: number) {
 }
 
 // 音量の倍率。試合の歓声やBGMの邪魔をしない控えめな大きさにしている
-const LEVEL = { whoosh: 0.18, impact: 0.31, riser: 0.37, slow: 0.22, kick: 0.75, net: 0.6, glove: 0.75, bell: 0.4, shimmer: 0.3, soft: 0.3 }
+const LEVEL = { whoosh: 0.18, impact: 0.31, riser: 0.37, kick: 0.75, net: 0.6, glove: 0.75, bell: 0.4, shimmer: 0.3, soft: 0.3 }
 
 // 決まった seed から決まる疑似乱数（書き出すたびに同じ音になる）
 const rand = (n: number) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x) }
@@ -292,28 +292,6 @@ export function riser(ac: BaseAudioContext, out: AudioNode, t0: number, t1: numb
   low.connect(lg).connect(out)
   low.start(t0)
   low.stop(t1 + 0.05)
-}
-
-// スローに入る瞬間：テープが止まるように音程が沈み、風切り音が抜ける
-export function slowDown(ac: BaseAudioContext, out: AudioNode, t: number, vol = 1) {
-  vol *= LEVEL.slow
-  const wet = reverb(ac, out)
-  const o = ac.createOscillator()
-  o.type = 'sawtooth'
-  o.frequency.setValueAtTime(320, t)
-  o.frequency.exponentialRampToValueAtTime(38, t + 0.8)
-  const lp = ac.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.setValueAtTime(2200, t)
-  lp.frequency.exponentialRampToValueAtTime(180, t + 0.8)
-  const g = ac.createGain()
-  env(g, t + 0.03, 0.22 * vol, 0.03, 0.85)
-  o.connect(lp).connect(g)
-  g.connect(out)
-  g.connect(wet)
-  o.start(t)
-  o.stop(t + 0.95)
-  whoosh(ac, out, t + 0.12, 0.45 * vol / LEVEL.slow)
 }
 
 // ---- 場面ごとの音 ----

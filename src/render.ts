@@ -3,7 +3,7 @@ import {
   Input, Mp4OutputFormat, Output, QUALITY_HIGH, canEncodeAudio, canEncodeVideo,
 } from 'mediabunny'
 import type { Player, Project, Scene, ZoomRect } from './types'
-import { bell, impact, momentSound, riser, slowDown, softHit, whoosh } from './sfx'
+import { bell, impact, momentSound, riser, softHit, whoosh } from './sfx'
 import { ENDING_SLAM, OPEN_SLAM, TFC_END, TFC_TIMES, drawEnding, openingDuration, drawOpening, type OpeningImage } from './opening'
 
 export const OUT_W = 1920
@@ -649,8 +649,6 @@ function scheduleSfx(ac: BaseAudioContext, dest: AudioNode, project: Project, to
   let t = openSec
   for (const scene of project.scenes) {
     whoosh(ac, out, t, 1, seed++)
-    const r = slowRange(scene)
-    if (r) slowDown(ac, out, t + outTimeAt(scene, r[0]), 0.8)
     if (scene.mark > scene.start && scene.mark < scene.end) momentSound(ac, out, t + outTimeAt(scene, scene.mark), scene.kind)
     t += sceneOutDuration(scene)
   }
