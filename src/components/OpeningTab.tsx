@@ -146,10 +146,10 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
 
   return (
     <div className="space-y-6">
-      <ScreenTitle step="04" en="OPENING" title="オープニング" sub="写真と言葉で、4秒の幕開けをつくります" />
+      <ScreenTitle step="04" en="OPENING" title="オープニング" sub="選手の写真と言葉で、動画の始まりと終わりを演出します" />
 
       <Segmented<OpeningStyle> value={op.style} onChange={setStyle}
-        options={[{ v: 'poster', label: 'ポスター（筆跡）' }, { v: 'tfc', label: '高柳FC' }]} />
+        options={[{ v: 'poster', label: '筆文字' }, { v: 'tfc', label: '高柳FC' }]} />
 
       <div className="sticky top-0 z-10 -mx-5 px-5 pb-3 bg-ink">
         <canvas ref={canvasRef} className="w-full aspect-video rounded-xl bg-black border border-line" />

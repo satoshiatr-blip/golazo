@@ -35,10 +35,10 @@ export default function SetupTab({ project, setProject, go }: ProjectProps & { g
           <p className="text-[11px] font-black italic tracking-[0.3em] text-cyan">ONE MOMENT → SPECIAL CUT</p>
           <h2 className="mt-2 text-[34px] leading-[1.15] font-black italic -skew-x-6 origin-left">あの一瞬を、<br /><span className="bg-[linear-gradient(110deg,#22d3ee,#818cf8_35%,#e879f9_65%,#ffb627)] bg-clip-text text-transparent">特別な一本に。</span></h2>
           <ol className="mt-5 grid grid-cols-5 gap-1.5 text-center">
-            {['試合', 'マーク', '仕上げ', '幕開け', '書き出し'].map((t, i) => (
+            {['試合', 'マーク', 'シーン', 'オープニング', '書き出し'].map((t, i) => (
               <li key={t} className="rise rounded-xl bg-ink/60 backdrop-blur border border-line py-2" style={{ animationDelay: `${120 + i * 70}ms` }}>
                 <span className="block text-[10px] font-black italic text-cyan">0{i + 1}</span>
-                <span className="text-xs font-bold">{t}</span>
+                <span className="text-[10px] font-bold tracking-tighter whitespace-nowrap">{t}</span>
               </li>
             ))}
           </ol>

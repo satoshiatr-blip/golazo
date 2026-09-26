@@ -89,7 +89,7 @@ export default function App() {
                     <span className="absolute -top-1.5 -right-3 min-w-5 h-5 px-1 rounded-full bg-brand text-ink text-[11px] font-bold grid place-items-center">{project.scenes.length}</span>
                   )}
                 </span>
-                <span className="text-[11px] font-bold"><span className="opacity-50 mr-0.5">0{i + 1}</span>{label}</span>
+                <span className="text-[10.5px] font-bold whitespace-nowrap tracking-tight"><span className="opacity-50 mr-0.5">0{i + 1}</span>{label}</span>
               </button>
             )
           })}
