@@ -1,0 +1,12 @@
+{
+  "name": "GOLAZO",
+  "short_name": "GOLAZO",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#04060c",
+  "theme_color": "#1a1400",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
