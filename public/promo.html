@@ -10,6 +10,8 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#060818;font-family:'Noto Sans JP',sans-serif;color:#eef2ff;max-width:480px;margin:0 auto;}
+/* 日本語を単語の途中で折らない（改行は助詞・読点の後ろだけ。印は下のスクリプトで付ける） */
+body{word-break:keep-all;overflow-wrap:anywhere;line-break:strict;}
 .sec{padding:48px 20px;border-bottom:1px solid rgba(255,255,255,0.05);}
 .lbl{font-size:9px;font-weight:700;letter-spacing:3px;color:#38d9f5;text-transform:uppercase;margin-bottom:4px;}
 .sech{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;margin-bottom:20px;}
@@ -68,7 +70,7 @@ body{background:#060818;font-family:'Noto Sans JP',sans-serif;color:#eef2ff;max-
 <div class="hero">
   <div class="hero-tag"><span class="live"></span>少年サッカー向け 無料Webアプリ</div>
   <div class="hero-h1">GOL<em>AZO</em></div>
-  <p class="hero-desc">試合の見せ場に、<strong>選手の写真と言葉で作るオープニングとエンディング</strong>を付けて、特別な1本に。<br>写真の切り抜きも編集も、iPhoneの中だけで完結。</p>
+  <p class="hero-desc">試合の見せ場に、<br><strong>写真と言葉のオープニングとエンディング</strong>を付けて、<br>特別な1本の動画に。<br>写真の切り抜きも動画の編集も、<br>iPhoneの中だけで完結します。</p>
   <a href="https://satoshiatr-blip.github.io/golazo/" target="_blank" style="text-decoration:none;display:block;">
     <div class="cta-box">
       <div class="cta-box-l">インストール不要・完全無料</div>
@@ -166,5 +168,13 @@ body{background:#060818;font-family:'Noto Sans JP',sans-serif;color:#eef2ff;max-
   </div>
 </div>
 
+<script>
+// 助詞・読点の後ろに改行できる印（ゼロ幅スペース）を入れる。続く文字がひらがなのとき（「できます」の「で」など）と「その」「この」の後ろには入れない
+(function(){
+  var re=/((?:[はがをにでともへや、。」）]|(?<![そこあど])の))(?=[^ぁ-ゟ、。」）！？!?\s])/g;
+  var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n;
+  while((n=w.nextNode())){ if(/[぀-鿿]/.test(n.data)) n.data=n.data.replace(re,'$1​'); }
+})();
+</script>
 </body>
 </html>
