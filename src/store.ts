@@ -40,6 +40,7 @@ export const emptyProject = (): Project => ({
 })
 
 export const emptyOpening = (): Opening => ({
+  style: 'poster',
   top: 'この一瞬の、その先へ',
   main: '夢の続きへ。',
   bottom: '',

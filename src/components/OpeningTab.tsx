@@ -4,13 +4,21 @@ import { cutoutPerson, shrinkPhoto } from '../cutout'
 import { savePhoto } from '../idb'
 import { OPEN_SEC, OUT_W } from '../render'
 import { defaultBottom, drawOpening, loadOpeningImages, type OpeningImage } from '../opening'
-import type { Opening, OpeningPhoto } from '../types'
+import type { Opening, OpeningPhoto, OpeningStyle } from '../types'
 import { uid } from '../types'
 import { IconBack, IconPlay, IconPlus, IconStop, IconTrash } from './icons'
 import { COLORS } from './SetupTab'
-import { Button, Card, Field, FilePicker, GroupLabel, Row, ScreenTitle, Slider, Toggle, inputCls, type ProjectProps } from './ui'
+import { Button, Card, Field, FilePicker, GroupLabel, Row, ScreenTitle, Segmented, Slider, Toggle, inputCls, type ProjectProps } from './ui'
 
 const MAX_PHOTOS = 5
+// 高柳FC版の赤系（先頭はエンブレムの赤）
+const REDS = [
+  { c: '#d7232a', name: 'エンブレム' },
+  { c: '#b3101f', name: 'クリムゾン' },
+  { c: '#ff3040', name: 'スカーレット' },
+  { c: '#7d0c1c', name: 'ワイン' },
+  { c: '#ff5a3c', name: 'バーミリオン' },
+]
 // 止めているときに見せる瞬間（全部そろって、まだ場面転換が始まる前）
 const STILL_T = 3.3
 
@@ -40,6 +48,15 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
   const [selected, setSelected] = useState<string | null>(null)
   const [working, setWorking] = useState<Set<string>>(new Set())
   const [notice, setNotice] = useState('')
+
+  function setStyle(style: OpeningStyle) {
+    setProject(p => ({
+      ...p,
+      // 高柳FC版に切り替えたら、赤系でない色はエンブレムの赤にする
+      color: style === 'tfc' && !REDS.some(r => r.c === p.color) ? REDS[0].c : p.color,
+      opening: { ...p.opening, style },
+    }))
+  }
 
   const setOp = (patch: Partial<Opening>) => setProject(p => ({ ...p, opening: { ...p.opening, ...patch } }))
   const setPhoto = (id: string, patch: Partial<OpeningPhoto>) =>
@@ -124,6 +141,9 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
     <div className="space-y-6">
       <ScreenTitle step="04" en="OPENING" title="オープニング" sub="写真と言葉で、4秒の幕開けをつくります" />
 
+      <Segmented<OpeningStyle> value={op.style} onChange={setStyle}
+        options={[{ v: 'poster', label: 'ポスター（筆跡）' }, { v: 'tfc', label: '高柳FC' }]} />
+
       <div className="sticky top-0 z-10 -mx-5 px-5 pb-3 bg-ink">
         <canvas ref={canvasRef} className="w-full aspect-video rounded-xl bg-black border border-line" />
         <div className="mt-2 flex gap-2">
@@ -194,16 +214,31 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
             <Field label="右下のボックス">
               <input className={inputCls} value={op.badge} placeholder="GOAL!" onChange={e => setOp({ badge: e.target.value })} />
             </Field>
-            <Field label="右上の四角（空なら出さない）">
-              <input className={inputCls} value={op.corner} placeholder="#10" onChange={e => setOp({ corner: e.target.value })} />
-            </Field>
+            {op.style === 'poster' && (
+              <Field label="右上の四角（空なら出さない）">
+                <input className={inputCls} value={op.corner} placeholder="#10" onChange={e => setOp({ corner: e.target.value })} />
+              </Field>
+            )}
           </div>
         </Card>
       </div>
 
       <div>
         <GroupLabel>色（動画全体のテーマカラー）</GroupLabel>
-        <Card>
+        <Card className="space-y-4">
+          {op.style === 'tfc' && (
+            <div>
+              <p className="text-xs text-muted mb-2">赤系</p>
+              <div className="grid grid-cols-5 gap-2">
+                {REDS.map(r => (
+                  <button key={r.c} onClick={() => setProject(p => ({ ...p, color: r.c }))} className="flex flex-col items-center gap-1">
+                    <span className={`w-full aspect-square rounded-full transition ${project.color === r.c ? 'ring-2 ring-offset-2 ring-offset-surface ring-fg scale-105' : ''}`} style={{ background: r.c }} />
+                    <span className="text-[10px] text-muted">{r.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-8 gap-2">
             {COLORS.map(c => (
               <button key={c} onClick={() => setProject(p => ({ ...p, color: c }))} aria-label={`色 ${c}`}

@@ -22,7 +22,23 @@ const SLOTS: [number, number][][] = [
   [[960, 810], [630, 730], [1290, 730], [320, 650], [1600, 650]],
 ]
 
+let crest: OffscreenCanvas | null = null
+
+// 高柳FCのエンブレム（public/tfc-logo.png）。一度だけ読み込み、描画しやすい大きさにしておく
+export async function ensureCrest() {
+  if (crest) return
+  try {
+    const b = await (await fetch(new URL('tfc-logo.png', document.baseURI))).blob()
+    const bmp = await createImageBitmap(b)
+    const h = 760
+    crest = new OffscreenCanvas(Math.round((bmp.width * h) / bmp.height), h)
+    crest.getContext('2d')!.drawImage(bmp, 0, 0, crest.width, crest.height)
+    bmp.close()
+  } catch { /* 読めなくてもエンブレムなしで描く */ }
+}
+
 export async function loadOpeningImages(photos: OpeningPhoto[]): Promise<OpeningImage[]> {
+  await ensureCrest()
   const out: OpeningImage[] = []
   for (const photo of photos) {
     const b = (photo.cutout && photo.hasCut ? await loadPhoto(photo.id, true) : null) ?? await loadPhoto(photo.id, false)
@@ -42,6 +58,7 @@ export function defaultBottom(p: Project) {
 }
 
 export function drawOpening(ctx: Ctx, p: Project, images: OpeningImage[], t: number, dur: number) {
+  if (p.opening.style === 'tfc') return drawTfc(ctx, p, images, t, dur)
   const C = p.color
   const frame = Math.round(t * 30)
   const u = t - REVEAL
@@ -362,5 +379,163 @@ function drawCornerBox(ctx: Ctx, text: string, u: number) {
   const size = lines.length > 1 ? 44 : 58
   ctx.font = `900 ${size}px ${FONT}`
   lines.forEach((l, i) => ctx.fillText(l, x + s / 2, y + s / 2 + (i - (lines.length - 1) / 2) * size * 1.05, s - 20))
+  ctx.restore()
+}
+
+// ---- 高柳FC版：黒地にエンブレムが光って現れ、赤白の縦縞ポスターへ ----
+
+const CREST_END = 1.05
+export const TFC_TIMES = { crest: 0.22, slam: CREST_END + 0.55 }
+
+function drawTfc(ctx: Ctx, p: Project, images: OpeningImage[], t: number, dur: number) {
+  const C = p.color
+  const frame = Math.round(t * 30)
+  const u = t - CREST_END
+  if (u < 0) drawCrestIntro(ctx, C, t, frame)
+  else {
+    const zoom = 1.06 - 0.06 * ease(clamp(u / 0.5, 0, 1)) + 0.02 * clamp((u - 0.5) / (dur - CREST_END), 0, 1)
+    ctx.save()
+    ctx.translate(OUT_W / 2, OUT_H / 2)
+    ctx.scale(zoom, zoom)
+    ctx.translate(-OUT_W / 2, -OUT_H / 2)
+    drawTfcPoster(ctx, p, images, u)
+    ctx.restore()
+    drawGrain(ctx, frame)
+    // 黒い幕が左右に開いてポスターが見える
+    if (u < 0.35) {
+      const k = ease(u / 0.35)
+      const half = OUT_W / 2
+      ctx.fillStyle = INK
+      ctx.fillRect(0, 0, half * (1 - k), OUT_H)
+      ctx.fillRect(half + half * k, 0, half, OUT_H)
+      ctx.fillStyle = C
+      ctx.fillRect(half * (1 - k) - 24, 0, 24, OUT_H)
+      ctx.fillRect(half + half * k, 0, 24, OUT_H)
+    }
+    if (u < 0.1) flash(ctx, 0.6 * (1 - u / 0.1))
+  }
+  const ds = t - TFC_TIMES.slam
+  if (ds >= 0 && ds < 0.1) flash(ctx, 0.5 * (1 - ds / 0.1))
+  if (dur - t < SLASH_SEC) drawSlash(ctx, C, -(dur - t) / SLASH_SEC, frame)
+}
+
+function rays(ctx: Ctx, cx: number, cy: number, frame: number, color: string, alpha: number, spin: number) {
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.rotate(spin)
+  ctx.fillStyle = color
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2
+    ctx.globalAlpha = alpha * (0.35 + rnd(i * 3.7 + Math.floor(frame / 3)) * 0.65)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(Math.cos(a - 0.05) * 1500, Math.sin(a - 0.05) * 1500)
+    ctx.lineTo(Math.cos(a + 0.05) * 1500, Math.sin(a + 0.05) * 1500)
+    ctx.closePath()
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
+let shineCanvas: OffscreenCanvas | null = null
+
+// エンブレムに斜めの光を走らせる（エンブレムの形の内側だけ光る）。k: 0→1 で光が横切る
+function drawCrestShine(ctx: Ctx, x: number, y: number, h: number, k: number) {
+  if (!crest) return
+  const w = (crest.width * h) / crest.height
+  if (k <= 0 || k >= 1) { ctx.drawImage(crest, x, y, w, h); return }
+  shineCanvas ??= new OffscreenCanvas(crest.width, crest.height)
+  const g = shineCanvas.getContext('2d')!
+  g.globalCompositeOperation = 'source-over'
+  g.clearRect(0, 0, crest.width, crest.height)
+  g.drawImage(crest, 0, 0)
+  g.globalCompositeOperation = 'source-atop'
+  const cx = -crest.width * 0.6 + k * crest.width * 2.2
+  const grad = g.createLinearGradient(cx - 160, 0, cx + 160, crest.height * 0.4)
+  grad.addColorStop(0, 'rgba(255,255,255,0)')
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.75)')
+  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, crest.width, crest.height)
+  ctx.drawImage(shineCanvas, x, y, w, h)
+}
+
+function drawCrestIntro(ctx: Ctx, C: string, t: number, frame: number) {
+  ctx.fillStyle = INK
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  const t0 = TFC_TIMES.crest
+  const glow = ctx.createRadialGradient(OUT_W / 2, OUT_H / 2, 0, OUT_W / 2, OUT_H / 2, 900)
+  glow.addColorStop(0, C + (t < t0 ? '33' : 'aa'))
+  glow.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  if (t >= t0) rays(ctx, OUT_W / 2, OUT_H / 2, frame, C, 0.5 * clamp((t - t0) / 0.15, 0, 1), t * 0.4)
+  if (!crest) return
+  // 大きな状態から落ちてきて叩きつけ、少し跳ね返る
+  const k = clamp(t / t0, 0, 1)
+  const land = t < t0 ? 2.4 - 1.4 * k * k : 1 + 0.06 * Math.exp(-(t - t0) * 9) * Math.cos((t - t0) * 30)
+  const out = clamp((t - (CREST_END - 0.2)) / 0.2, 0, 1)
+  const h = 640 * land * (1 + out * 0.25)
+  const w = (crest.width * h) / crest.height
+  ctx.save()
+  ctx.globalAlpha = (t < t0 ? k : 1) * (1 - out)
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'
+  ctx.shadowBlur = 40
+  ctx.shadowOffsetY = 16
+  drawCrestShine(ctx, OUT_W / 2 - w / 2, OUT_H / 2 - h / 2, h, (t - 0.4) / 0.4)
+  ctx.restore()
+  if (t >= t0 && t < t0 + 0.1) flash(ctx, 0.8 * (1 - (t - t0) / 0.1))
+}
+
+function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) {
+  const C = p.color
+  const op = p.opening
+  ctx.fillStyle = C
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  const v = ctx.createRadialGradient(OUT_W * 0.5, OUT_H * 0.4, OUT_H * 0.15, OUT_W * 0.5, OUT_H * 0.4, OUT_W * 0.7)
+  v.addColorStop(0, 'rgba(255,255,255,0.14)')
+  v.addColorStop(1, 'rgba(0,0,0,0.45)')
+  ctx.fillStyle = v
+  ctx.fillRect(0, 0, OUT_W, OUT_H)
+  // エンブレムの赤・白・赤の縦縞を、斜めの太い白帯として背景に敷く
+  const k = ease(clamp(u / 0.5, 0, 1))
+  ctx.save()
+  ctx.translate(OUT_W / 2, OUT_H / 2)
+  ctx.transform(1, 0, -0.32, 1, 0, 0)
+  const bw = 520, top = -OUT_H / 2 - 40, len = OUT_H + 80
+  ctx.fillStyle = 'rgba(255,255,255,0.93)'
+  ctx.fillRect(-bw / 2, top - (1 - k) * 1200, bw, len)
+  ctx.fillStyle = INK
+  ctx.fillRect(-bw / 2 - 34, top + (1 - k) * 1200, 14, len)
+  ctx.fillRect(bw / 2 + 20, top + (1 - k) * 1200, 14, len)
+  ctx.fillStyle = 'rgba(255,255,255,0.12)'
+  for (let i = 0; i < 6; i++) ctx.fillRect(-900 + i * 330 + rnd(i) * 80, top, 6 + rnd(i * 2) * 10, len)
+  ctx.restore()
+  // 背景に大きく薄い TFC
+  ctx.save()
+  ctx.globalAlpha = 0.1 * k
+  ctx.font = `900 560px ${FONT}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineWidth = 6
+  ctx.strokeStyle = '#fff'
+  ctx.strokeText('TFC', OUT_W / 2 - 40 + u * 30, OUT_H / 2 + 80)
+  ctx.restore()
+
+  drawPlayers(ctx, images, u)
+  // 叩きつけの時刻をポスター版とそろえた相対時間で渡す
+  drawMain(ctx, op.main, u - (TFC_TIMES.slam - CREST_END) + (OPEN_SLAM - REVEAL), true)
+  drawTop(ctx, op.top, u, C)
+  drawBand(ctx, op.bottom || defaultBottom(p), op.badge, u, C, true)
+  if (!crest) return
+  const kc = ease(clamp((u - 0.35) / 0.3, 0, 1))
+  if (kc <= 0) return
+  ctx.save()
+  ctx.globalAlpha = kc
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'
+  ctx.shadowBlur = 24
+  ctx.shadowOffsetY = 8
+  const h = 250 * (1.3 - 0.3 * kc)
+  drawCrestShine(ctx, OUT_W - 60 - (crest.width * h) / crest.height, 34, h, (u - 0.9) / 0.5)
   ctx.restore()
 }

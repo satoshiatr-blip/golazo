@@ -27,7 +27,11 @@ export type Scene = {
 // scale は枠に対する倍率、dx/dy は 1920x1080 基準の px ずらし
 export type OpeningPhoto = { id: string; cutout: boolean; hasCut: boolean; scale: number; dx: number; dy: number }
 
+// poster: 黄色の筆跡ポスター / tfc: 高柳FCのエンブレムを使う赤基調
+export type OpeningStyle = 'poster' | 'tfc'
+
 export type Opening = {
+  style: OpeningStyle
   top: string
   main: string
   bottom: string

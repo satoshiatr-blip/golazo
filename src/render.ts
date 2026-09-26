@@ -4,7 +4,7 @@ import {
 } from 'mediabunny'
 import type { Player, Project, Scene, ZoomRect } from './types'
 import { impact, riser, slowDown, whoosh } from './sfx'
-import { OPEN_SLAM, drawOpening, type OpeningImage } from './opening'
+import { OPEN_SLAM, TFC_TIMES, drawOpening, type OpeningImage } from './opening'
 
 export const OUT_W = 1920
 export const OUT_H = 1080
@@ -627,8 +627,14 @@ function scheduleSfx(ac: BaseAudioContext, dest: AudioNode, project: Project, to
   const out = ac.createGain()
   out.gain.value = project.sfxVolume
   out.connect(dest)
-  whoosh(ac, out, 0.35, 0.8)
-  impact(ac, out, OPEN_SLAM, 0.9)
+  if (project.opening.style === 'tfc') {
+    impact(ac, out, TFC_TIMES.crest, 0.9)
+    whoosh(ac, out, 1.0, 0.8)
+    impact(ac, out, TFC_TIMES.slam, 0.8)
+  } else {
+    whoosh(ac, out, 0.35, 0.8)
+    impact(ac, out, OPEN_SLAM, 0.9)
+  }
   riser(ac, out, 2.2, OPEN_SEC)
   let t = OPEN_SEC
   for (const scene of project.scenes) {
