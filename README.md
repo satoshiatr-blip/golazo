@@ -7,6 +7,11 @@
 - 使う: https://satoshiatr-blip.github.io/golazo/ （Safariで開き「ホーム画面に追加」）
 - 技術: Vite + React + TypeScript + Tailwind CSS、[mediabunny](https://github.com/Vanilagy/mediabunny)（WebCodecs）、[MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/image_segmenter)（人物切り抜き、`selfie_multiclass_256x256` を `public/mediapipe/` に同梱）
 
+## 同梱素材
+
+- 書体: Yuji Boku（ポスター版）、Dela Gothic One（高柳FC版）。どちらも SIL Open Font License 1.1、`public/fonts/` にライセンス文と一緒に置いている（woff2に変換済み）
+- `public/tfc-logo.png`: 高柳FCのエンブレム（低解像度の画像から描き直したもの）
+
 ## 開発
 
 ```bash

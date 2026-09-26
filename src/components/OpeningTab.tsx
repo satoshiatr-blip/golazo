@@ -254,7 +254,7 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
   )
 }
 
-function Thumb({ img }: { img: ImageBitmap }) {
+function Thumb({ img }: { img: OffscreenCanvas }) {
   const ref = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const c = ref.current!

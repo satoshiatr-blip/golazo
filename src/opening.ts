@@ -2,7 +2,7 @@ import { loadPhoto } from './idb'
 import type { OpeningPhoto, Project } from './types'
 import { FONT, INK, OUT_H, OUT_W, clamp, drawGrain, drawSlash, ease, rnd, slanted, type Ctx } from './render'
 
-export type OpeningImage = { photo: OpeningPhoto; img: ImageBitmap }
+export type OpeningImage = { photo: OpeningPhoto; img: OffscreenCanvas }
 
 // 黒い画面の渦 → ポスターが開く瞬間
 const REVEAL = 0.72
@@ -11,7 +11,8 @@ export const OPEN_SLAM = REVEAL + 0.5
 const SLASH_SEC = 0.3
 // 足元は下の帯の裏に隠れる位置。人物をなるべく大きく見せるため帯より下に置く
 const FLOOR = 1060
-const MAIN_Y = 230
+// 言葉の上端（上の見出しの下）
+const MAIN_TOP = 140
 const BAND_Y = 972
 
 // 枚数ごとの並び（中心x・高さ）。先頭が主役で中央・最前面
@@ -39,14 +40,113 @@ export async function ensureCrest() {
   } catch { /* 読めなくてもエンブレムなしで描く */ }
 }
 
+let fontsReady: Promise<void> | null = null
+
+// メインの言葉の書体（アプリに同梱。オフラインでも使えるよう、端末のキャッシュに残る）
+export function ensureFonts() {
+  fontsReady ??= Promise.all(
+    [['Yuji Boku', 'YujiBoku-Regular.woff2'], ['Dela Gothic One', 'DelaGothicOne-Regular.woff2']].map(async ([family, file]) => {
+      const face = new FontFace(family, `url(${new URL(`fonts/${file}`, document.baseURI).href})`)
+      document.fonts.add(await face.load())
+    }),
+  ).then(() => {}, () => { fontsReady = null })
+  return fontsReady
+}
+
 export async function loadOpeningImages(photos: OpeningPhoto[]): Promise<OpeningImage[]> {
-  await ensureCrest()
+  await Promise.all([ensureCrest(), ensureFonts()])
   const out: OpeningImage[] = []
   for (const photo of photos) {
-    const b = (photo.cutout && photo.hasCut ? await loadPhoto(photo.id, true) : null) ?? await loadPhoto(photo.id, false)
-    if (b) out.push({ photo: { ...photo, cutout: photo.cutout && photo.hasCut }, img: await createImageBitmap(b) })
+    const cutout = photo.cutout && photo.hasCut
+    const b = (cutout ? await loadPhoto(photo.id, true) : null) ?? await loadPhoto(photo.id, false)
+    if (b) out.push({ photo: { ...photo, cutout }, img: await preparePhoto(b, cutout) })
   }
   return out
+}
+
+// 写真ごとにバラバラな明るさ・色味をそろえ、切り抜きには細い白い縁（リムライト）を付ける
+async function preparePhoto(blob: Blob, cutout: boolean) {
+  const bmp = await createImageBitmap(blob)
+  const w = bmp.width, h = bmp.height
+  const src = new OffscreenCanvas(w, h)
+  const sg = src.getContext('2d')!
+  sg.drawImage(bmp, 0, 0)
+  bmp.close()
+  const img = sg.getImageData(0, 0, w, h)
+  const d = img.data
+  let sum = 0, weight = 0
+  for (let i = 0; i < d.length; i += 16) {
+    const a = d[i + 3] / 255
+    sum += a * (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2])
+    weight += a
+  }
+  const mean = weight ? sum / weight : 128
+  const gain = clamp(118 / Math.max(1, mean), 0.8, 1.35)
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i] * gain, g = d[i + 1] * gain, b = d[i + 2] * gain
+    const l = 0.299 * r + 0.587 * g + 0.114 * b
+    // 彩度を少し上げ、コントラストを少し強める
+    r = l + (r - l) * 1.12; g = l + (g - l) * 1.12; b = l + (b - l) * 1.12
+    d[i] = (r - 128) * 1.12 + 128
+    d[i + 1] = (g - 128) * 1.12 + 128
+    d[i + 2] = (b - 128) * 1.12 + 128
+  }
+  if (cutout) dropSpecks(d, w, h)
+  sg.putImageData(img, 0, 0)
+  if (!cutout) return src
+
+  const pad = Math.max(3, Math.round(Math.max(w, h) / 230))
+  const out = new OffscreenCanvas(w + pad * 2, h + pad * 2)
+  const g = out.getContext('2d')!
+  const white = new OffscreenCanvas(w, h)
+  const wg = white.getContext('2d')!
+  wg.drawImage(src, 0, 0)
+  wg.globalCompositeOperation = 'source-in'
+  wg.fillStyle = '#fff'
+  wg.fillRect(0, 0, w, h)
+  g.globalAlpha = 0.95
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2
+    g.drawImage(white, pad + Math.cos(a) * pad, pad + Math.sin(a) * pad)
+  }
+  g.globalAlpha = 1
+  g.drawImage(src, pad, pad)
+  return out
+}
+
+// 切り抜きに残った、人物から離れた小さな欠片（旗・ボールの一部など）を消す。
+// 縮小した不透明マスクでつながりを調べ、最大の塊の3%未満の塊を透明にする
+function dropSpecks(d: Uint8ClampedArray, w: number, h: number) {
+  const k = Math.max(1, Math.ceil(Math.max(w, h) / 400))
+  const sw = Math.ceil(w / k), sh = Math.ceil(h / k)
+  const solid = new Uint8Array(sw * sh)
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 40) solid[((y / k) | 0) * sw + ((x / k) | 0)] = 1
+  const label = new Int32Array(sw * sh)
+  const areas = [0]
+  const stack: number[] = []
+  for (let i = 0; i < solid.length; i++) {
+    if (!solid[i] || label[i]) continue
+    const id = areas.length
+    let area = 0
+    label[i] = id
+    stack.push(i)
+    while (stack.length) {
+      const j = stack.pop()!
+      area++
+      const x = j % sw, y = (j / sw) | 0
+      for (const n of [x > 0 ? j - 1 : -1, x < sw - 1 ? j + 1 : -1, y > 0 ? j - sw : -1, y < sh - 1 ? j + sw : -1]) {
+        if (n >= 0 && solid[n] && !label[n]) { label[n] = id; stack.push(n) }
+      }
+    }
+    areas.push(area)
+  }
+  const keep = Math.max(...areas) * 0.03
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const id = label[((y / k) | 0) * sw + ((x / k) | 0)]
+      if (id && areas[id] < keep) d[(y * w + x) * 4 + 3] = 0
+    }
+  }
 }
 
 const isDark = (hex: string) => {
@@ -210,7 +310,7 @@ function drawPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) {
   ctx.restore()
 
   drawPlayers(ctx, images, u, mainBottom(op.main))
-  drawMain(ctx, op.main, u, dark)
+  drawMain(ctx, op.main, u, dark, MAIN_FACE.poster)
   drawTop(ctx, op.top, u, C)
   drawBand(ctx, op.bottom || defaultBottom(p), op.badge, u, C, dark)
   drawCornerBox(ctx, op.corner, u)
@@ -219,13 +319,19 @@ function drawPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) {
 const mainLines = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 3)
 const mainBase = (n: number) => (n === 1 ? 190 : n === 2 ? 140 : 104)
 
-// メインの文字の下端。人物の頭がここより上に出ないようにする（傾き・縁取り・叩きつけ後の寄りの分も見込む）
-function mainBottom(text: string) {
+// 言葉の塊の中心。行数が増えても上端は見出しの下にそろえる
+function mainCenter(text: string) {
   const lines = mainLines(text)
-  if (!lines.length) return 130
   const base = mainBase(lines.length)
   const total = lines.reduce((a, _, i) => a + base * (i === lines.length - 1 && lines.length > 1 ? 1.2 : 1) * 1.02, 0)
-  return MAIN_Y + (total / 2) * 1.07 + 60
+  return { cy: MAIN_TOP + (total / 2) * 1.07, half: (total / 2) * 1.07 }
+}
+
+// メインの文字の下端。人物の頭がここより上に出ないようにする（傾き・縁取り・叩きつけ後の寄りの分も見込む）
+function mainBottom(text: string) {
+  if (!mainLines(text).length) return 140
+  const { cy, half } = mainCenter(text)
+  return cy + half + 60
 }
 
 function drawPlayers(ctx: Ctx, images: OpeningImage[], u: number, top: number) {
@@ -282,8 +388,15 @@ function drawPlayers(ctx: Ctx, images: OpeningImage[], u: number, top: number) {
   }
 }
 
-// メインの文字：太い斜体を叩きつけて止める。改行で最大3行、最後の行を大きく
-function drawMain(ctx: Ctx, text: string, u: number, dark: boolean) {
+// デザインごとの書体と傾き（筆文字は傾けすぎると崩れて見えるので控えめに）
+// render.ts と相互に読み込むので、FONT は読み込み時ではなく使うときに参照する
+const MAIN_FACE = {
+  poster: { family: '"Yuji Boku"', skew: 0.1, bold: 0.045 },
+  tfc: { family: '"Dela Gothic One"', skew: 0.16, bold: 0 },
+}
+
+// メインの文字：叩きつけて止める。改行で最大3行、最後の行を大きく
+function drawMain(ctx: Ctx, text: string, u: number, dark: boolean, face: { family: string; skew: number; bold: number }) {
   const lines = mainLines(text)
   if (!lines.length) return
   const ds = u - (OPEN_SLAM - REVEAL)
@@ -295,32 +408,40 @@ function drawMain(ctx: Ctx, text: string, u: number, dark: boolean) {
   const base = mainBase(lines.length)
   ctx.save()
   ctx.globalAlpha = clamp(k * 2, 0, 1)
-  ctx.translate(960 + shake, MAIN_Y + shake * 0.5)
+  ctx.translate(960 + shake, mainCenter(text).cy + shake * 0.5)
   ctx.rotate(-0.06)
   ctx.scale(scale, scale)
-  ctx.transform(1, 0, -0.2, 1, 0, 0)
+  ctx.transform(1, 0, -face.skew, 1, 0, 0)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
   const sizes = lines.map((l, i) => {
     const want = base * (i === lines.length - 1 && lines.length > 1 ? 1.2 : 1)
-    ctx.font = `italic 900 ${want}px ${FONT}`
+    ctx.font = `${want}px ${face.family}, ${FONT}`
     return Math.min(want, (want * maxW) / Math.max(1, ctx.measureText(l).width))
   })
   let y = -sizes.reduce((a, b) => a + b * 1.02, 0) / 2
   lines.forEach((l, i) => {
     const size = sizes[i]
     y += size * 0.51
-    ctx.font = `italic 900 ${size}px ${FONT}`
+    // 斜めにすると行ごとに左右へずれるので、その分を戻して中央にそろえる
+    const x = face.skew * y
+    ctx.font = `${size}px ${face.family}, ${FONT}`
     ctx.lineWidth = size * 0.16
     ctx.strokeStyle = dark ? INK : '#fff'
     ctx.shadowColor = 'rgba(0,0,0,0.35)'
     ctx.shadowBlur = 20
     ctx.shadowOffsetY = 8
-    ctx.strokeText(l, 0, y)
+    ctx.strokeText(l, x, y)
     ctx.shadowColor = 'transparent'
     ctx.fillStyle = dark ? '#fff' : INK
-    ctx.fillText(l, 0, y)
+    // 筆文字は線が細いので、同じ色で縁取って太らせる
+    if (face.bold) {
+      ctx.lineWidth = size * face.bold
+      ctx.strokeStyle = ctx.fillStyle
+      ctx.strokeText(l, x, y)
+    }
+    ctx.fillText(l, x, y)
     y += size * 0.51
   })
   ctx.restore()
@@ -332,16 +453,17 @@ function drawTop(ctx: Ctx, text: string, u: number, C: string) {
   if (k <= 0) return
   ctx.save()
   ctx.globalAlpha = k
-  ctx.font = `italic 800 40px ${FONT}`
-  const w = ctx.measureText(text).width + 70
-  const x = 110 - (1 - k) * 300, y = 44
+  // スマホの画面でも読める大きさ
+  ctx.font = `italic 800 54px ${FONT}`
+  const w = Math.min(ctx.measureText(text).width, 1500) + 84
+  const x = 100 - (1 - k) * 300, y = 32
   ctx.fillStyle = INK
-  slanted(ctx, x, y, w, 62, 14)
+  slanted(ctx, x, y, w, 80, 18)
   ctx.fillStyle = C
-  slanted(ctx, x - 22, y, 12, 62, 14)
+  slanted(ctx, x - 26, y, 14, 80, 18)
   ctx.fillStyle = '#fff'
   ctx.textBaseline = 'middle'
-  ctx.fillText(text, x + 34, y + 33)
+  ctx.fillText(text, x + 40, y + 43, 1500)
   ctx.restore()
 }
 
@@ -408,7 +530,7 @@ function drawTfc(ctx: Ctx, p: Project, images: OpeningImage[], t: number, dur: n
   const C = p.color
   const frame = Math.round(t * 30)
   const u = t - CREST_END
-  if (u < 0) drawCrestIntro(ctx, C, t, frame)
+  if (u < 0) drawCrestIntro(ctx, C, t)
   else {
     const zoom = 1.06 - 0.06 * ease(clamp(u / 0.5, 0, 1)) + 0.02 * clamp((u - 0.5) / (dur - CREST_END), 0, 1)
     ctx.save()
@@ -436,20 +558,18 @@ function drawTfc(ctx: Ctx, p: Project, images: OpeningImage[], t: number, dur: n
   if (dur - t < SLASH_SEC) drawSlash(ctx, C, -(dur - t) / SLASH_SEC, frame)
 }
 
-function rays(ctx: Ctx, cx: number, cy: number, frame: number, color: string, alpha: number, spin: number) {
+// エンブレムの赤・白の縦縞が、左は上へ・右は下へ流れる
+function stripeRun(ctx: Ctx, C: string, alpha: number, t: number) {
+  if (alpha <= 0) return
+  const cols: [number, number, string][] = [[250, 150, C], [410, 56, '#fff'], [1454, 56, '#fff'], [1520, 150, C]]
+  const period = 560, len = 420
   ctx.save()
-  ctx.translate(cx, cy)
-  ctx.rotate(spin)
-  ctx.fillStyle = color
-  for (let i = 0; i < 24; i++) {
-    const a = (i / 24) * Math.PI * 2
-    ctx.globalAlpha = alpha * (0.35 + rnd(i * 3.7 + Math.floor(frame / 3)) * 0.65)
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    ctx.lineTo(Math.cos(a - 0.05) * 1500, Math.sin(a - 0.05) * 1500)
-    ctx.lineTo(Math.cos(a + 0.05) * 1500, Math.sin(a + 0.05) * 1500)
-    ctx.closePath()
-    ctx.fill()
+  ctx.globalAlpha = alpha
+  for (const [x, w, color] of cols) {
+    const dir = x < OUT_W / 2 ? -1 : 1
+    const off = (((t * 1600 * dir) % period) + period) % period
+    ctx.fillStyle = color
+    for (let y = off - period; y < OUT_H; y += period) ctx.fillRect(x, y, w, len)
   }
   ctx.restore()
 }
@@ -477,7 +597,7 @@ function drawCrestShine(ctx: Ctx, x: number, y: number, h: number, k: number) {
   ctx.drawImage(shineCanvas, x, y, w, h)
 }
 
-function drawCrestIntro(ctx: Ctx, C: string, t: number, frame: number) {
+function drawCrestIntro(ctx: Ctx, C: string, t: number) {
   ctx.fillStyle = INK
   ctx.fillRect(0, 0, OUT_W, OUT_H)
   const t0 = TFC_TIMES.crest
@@ -486,7 +606,7 @@ function drawCrestIntro(ctx: Ctx, C: string, t: number, frame: number) {
   glow.addColorStop(1, 'rgba(0,0,0,0)')
   ctx.fillStyle = glow
   ctx.fillRect(0, 0, OUT_W, OUT_H)
-  if (t >= t0) rays(ctx, OUT_W / 2, OUT_H / 2, frame, C, 0.5 * clamp((t - t0) / 0.15, 0, 1), t * 0.4)
+  if (t >= t0) stripeRun(ctx, C, 0.9 * clamp((t - t0) / 0.15, 0, 1), t)
   if (!crest) return
   // 大きな状態から落ちてきて叩きつけ、少し跳ね返る
   const k = clamp(t / t0, 0, 1)
@@ -510,8 +630,8 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
   ctx.fillStyle = C
   ctx.fillRect(0, 0, OUT_W, OUT_H)
   const v = ctx.createRadialGradient(OUT_W * 0.5, OUT_H * 0.4, OUT_H * 0.15, OUT_W * 0.5, OUT_H * 0.4, OUT_W * 0.7)
-  v.addColorStop(0, 'rgba(255,255,255,0.14)')
-  v.addColorStop(1, 'rgba(0,0,0,0.45)')
+  v.addColorStop(0, 'rgba(0,0,0,0)')
+  v.addColorStop(1, 'rgba(0,0,0,0.6)')
   ctx.fillStyle = v
   ctx.fillRect(0, 0, OUT_W, OUT_H)
   // エンブレムの赤・白・赤の縦縞を、斜めの太い白帯として背景に敷く
@@ -525,7 +645,7 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
   ctx.fillStyle = INK
   ctx.fillRect(-bw / 2 - 34, top + (1 - k) * 1200, 14, len)
   ctx.fillRect(bw / 2 + 20, top + (1 - k) * 1200, 14, len)
-  ctx.fillStyle = 'rgba(255,255,255,0.12)'
+  ctx.fillStyle = 'rgba(255,255,255,0.05)'
   for (let i = 0; i < 6; i++) ctx.fillRect(-900 + i * 330 + rnd(i) * 80, top, 6 + rnd(i * 2) * 10, len)
   ctx.restore()
   // 背景に大きく薄い TFC
@@ -541,7 +661,7 @@ function drawTfcPoster(ctx: Ctx, p: Project, images: OpeningImage[], u: number) 
 
   drawPlayers(ctx, images, u, mainBottom(op.main))
   // 叩きつけの時刻をポスター版とそろえた相対時間で渡す
-  drawMain(ctx, op.main, u - (TFC_TIMES.slam - CREST_END) + (OPEN_SLAM - REVEAL), true)
+  drawMain(ctx, op.main, u - (TFC_TIMES.slam - CREST_END) + (OPEN_SLAM - REVEAL), true, MAIN_FACE.tfc)
   drawTop(ctx, op.top, u, C)
   drawBand(ctx, op.bottom || defaultBottom(p), op.badge, u, C, true)
   if (!crest) return
