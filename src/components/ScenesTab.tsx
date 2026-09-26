@@ -82,7 +82,7 @@ export default function ScenesTab({ project, setProject, files, go }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <Card className="!p-3"><p className="text-[11px] text-muted font-bold tracking-wider">SCENES</p><p className="text-2xl font-black italic">{scenes.length}</p></Card>
-        <Card className="!p-3"><p className="text-[11px] text-muted font-bold tracking-wider">DURATION</p><p className="text-2xl font-black italic tabular-nums">{fmt(totalDuration(scenes))}</p></Card>
+        <Card className="!p-3"><p className="text-[11px] text-muted font-bold tracking-wider">DURATION</p><p className="text-2xl font-black italic tabular-nums">{fmt(totalDuration(project))}</p></Card>
       </div>
 
       <ol className="space-y-2.5">

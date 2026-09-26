@@ -530,8 +530,12 @@ function drawCornerBox(ctx: Ctx, text: string, u: number) {
 
 // ---- 高柳FC版：黒地にエンブレムが光って現れ、赤白の縦縞ポスターへ ----
 
-const CREST_END = 1.05
-export const TFC_TIMES = { crest: 0.22, slam: CREST_END + 0.55 }
+// エンブレムを見せる時間（ユーザー指定で2.5秒）。その後のポスター部分は約3秒
+const CREST_END = 2.5
+export const TFC_TIMES = { crest: 0.22, cut: CREST_END, slam: CREST_END + 0.55 }
+
+// オープニングの長さ：高柳FC版はエンブレムの分だけ長い
+export const openingDuration = (p: Project) => (p.opening.style === 'tfc' ? CREST_END + 2.95 : 4)
 
 function drawTfc(ctx: Ctx, p: Project, images: OpeningImage[], t: number, dur: number) {
   const C = p.color
@@ -619,14 +623,17 @@ function drawCrestIntro(ctx: Ctx, C: string, t: number) {
   const k = clamp(t / t0, 0, 1)
   const land = t < t0 ? 2.4 - 1.4 * k * k : 1 + 0.06 * Math.exp(-(t - t0) * 9) * Math.cos((t - t0) * 30)
   const out = clamp((t - (CREST_END - 0.2)) / 0.2, 0, 1)
-  const h = 300 * land * (1 + out * 0.25)
+  // 着地後はゆっくり寄っていく
+  const push = 1 + 0.06 * clamp((t - t0) / (CREST_END - t0), 0, 1)
+  const h = 300 * land * push * (1 + out * 0.25)
   const w = (crest.width * h) / crest.height
   ctx.save()
   ctx.globalAlpha = (t < t0 ? k : 1) * (1 - out)
   ctx.shadowColor = 'rgba(0,0,0,0.6)'
   ctx.shadowBlur = 40
   ctx.shadowOffsetY = 16
-  drawCrestShine(ctx, OUT_W / 2 - w / 2, OUT_H / 2 - h / 2, h, (t - 0.4) / 0.4)
+  // 光は2回横切る
+  drawCrestShine(ctx, OUT_W / 2 - w / 2, OUT_H / 2 - h / 2, h, t < 1.3 ? (t - 0.4) / 0.45 : (t - 1.55) / 0.45)
   ctx.restore()
   if (t >= t0 && t < t0 + 0.1) flash(ctx, 0.8 * (1 - (t - t0) / 0.1))
 }

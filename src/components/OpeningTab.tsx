@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Tab } from '../App'
 import { cutoutPerson, shrinkPhoto } from '../cutout'
 import { savePhoto } from '../idb'
-import { CLOSE_SEC, OPEN_SEC, OUT_W } from '../render'
-import { defaultBottom, drawEnding, drawOpening, loadOpeningImages, type OpeningImage } from '../opening'
+import { CLOSE_SEC, OUT_W } from '../render'
+import { defaultBottom, drawEnding, drawOpening, loadOpeningImages, openingDuration, type OpeningImage } from '../opening'
 import type { Opening, OpeningPhoto, OpeningStyle } from '../types'
 import { uid } from '../types'
 import { IconBack, IconPlay, IconPlus, IconStop, IconTrash } from './icons'
@@ -19,8 +19,7 @@ const REDS = [
   { c: '#7d0c1c', name: 'ワイン' },
   { c: '#ff5a3c', name: 'バーミリオン' },
 ]
-// 止めているときに見せる瞬間（全部そろって、まだ場面転換が始まる前）
-const STILL_T = 3.3
+// 止めているときに見せる瞬間：オープニングは全部そろって場面転換が始まる前（終わりの0.7秒前）
 const END_STILL_T = 1.8
 
 // 写真の読み込みは「どの画像を使うか」が変わったときだけ。大きさ・位置の変更では読み直さない
@@ -49,7 +48,8 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
   // プレビューで見せる場面（始まり＝オープニング、終わり＝エンディング）
   const [view, setView] = useState<'open' | 'end'>('open')
   const scene = view
-  const sceneDur = scene === 'end' ? CLOSE_SEC : OPEN_SEC
+  const openSec = openingDuration(project)
+  const sceneDur = scene === 'end' ? CLOSE_SEC : openSec
   const [selected, setSelected] = useState<string | null>(null)
   const [working, setWorking] = useState<Set<string>>(new Set())
   const [notice, setNotice] = useState('')
@@ -77,9 +77,9 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
     const ctx = c.getContext('2d')!
     ctx.setTransform(c.width / OUT_W, 0, 0, c.width / OUT_W, 0, 0)
     if (scene === 'end') drawEnding(ctx, project, t, CLOSE_SEC)
-    else drawOpening(ctx, project, images, t, OPEN_SEC)
+    else drawOpening(ctx, project, images, t, openSec)
   }
-  useEffect(() => { if (!playing) drawRef.current(scene === 'end' ? END_STILL_T : STILL_T) })
+  useEffect(() => { if (!playing) drawRef.current(scene === 'end' ? END_STILL_T : openSec - 0.7) })
   useEffect(() => {
     if (!playing) return
     let raf = 0

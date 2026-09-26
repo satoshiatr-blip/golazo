@@ -129,7 +129,7 @@ export default function ExportTab({ project, setProject, files, addFiles }: Prop
       <div className="grid grid-cols-3 gap-3">
         {[
           ['SCENES', String(project.scenes.length)],
-          ['DURATION', fmt(totalDuration(project.scenes))],
+          ['DURATION', fmt(totalDuration(project))],
           ['QUALITY', '1080p'],
         ].map(([k, v]) => (
           <Card key={k} className="!p-3">

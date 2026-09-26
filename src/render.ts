@@ -4,13 +4,12 @@ import {
 } from 'mediabunny'
 import type { Player, Project, Scene, ZoomRect } from './types'
 import { impact, riser, slowDown, whoosh } from './sfx'
-import { ENDING_SLAM, OPEN_SLAM, TFC_END, TFC_TIMES, drawEnding, drawOpening, type OpeningImage } from './opening'
+import { ENDING_SLAM, OPEN_SLAM, TFC_END, TFC_TIMES, drawEnding, openingDuration, drawOpening, type OpeningImage } from './opening'
 
 export const OUT_W = 1920
 export const OUT_H = 1080
 export const FPS = 30
 export const SLOW_RATE = 0.5
-export const OPEN_SEC = 4
 export const CLOSE_SEC = 3
 const SAMPLE_RATE = 48000
 export const FONT = '-apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif'
@@ -471,8 +470,8 @@ export function ensureAac() {
   return aacReady
 }
 
-export function totalDuration(scenes: Scene[]) {
-  return OPEN_SEC + CLOSE_SEC + scenes.reduce((a, s) => a + sceneOutDuration(s), 0)
+export function totalDuration(project: Project) {
+  return openingDuration(project) + CLOSE_SEC + project.scenes.reduce((a, s) => a + sceneOutDuration(s), 0)
 }
 
 type ExportOpts = {
@@ -502,7 +501,8 @@ export async function exportHighlight({ project, files, bgm, openingImages, onPr
     if (!(await canEncodeVideo('avc', { width: OUT_W, height: OUT_H })))
       throw new Error('この端末のブラウザは動画の書き出し（H.264）に対応していません。iOSを最新にしてお試しください')
     await ensureAac()
-    const total = totalDuration(scenes)
+    const total = totalDuration(project)
+    const openSec = openingDuration(project)
     onProgress(0, '音声を準備中')
     const audio = await renderAudio(project, getInput, bgm, total)
 
@@ -524,8 +524,8 @@ export async function exportHighlight({ project, files, bgm, openingImages, onPr
       if (frame % 10 === 0) onProgress(frame / totalFrames, `映像を書き出し中 ${Math.round((frame / totalFrames) * 100)}%`)
     }
 
-    for (let i = 0; i < OPEN_SEC * FPS; i++) {
-      drawOpening(ctx, project, openingImages, i / FPS, OPEN_SEC)
+    for (let i = 0; i < Math.round(openSec * FPS); i++) {
+      drawOpening(ctx, project, openingImages, i / FPS, openSec)
       await emit()
     }
     const sinks = new Map<string, CanvasSink>()
@@ -586,7 +586,8 @@ async function renderAudio(project: Project, getInput: (k: string) => Input, bgm
   const clip = ac.createWaveShaper()
   clip.curve = Float32Array.from({ length: 2048 }, (_, i) => Math.tanh(((i / 2047) * 2 - 1) * 1.5) / Math.tanh(1.5) * 0.89)
   master.connect(trim).connect(clip).connect(ac.destination)
-  let t = OPEN_SEC
+  // 試合の音はオープニングの長さ（デザインで違う）の後ろから並べる
+  let t = openingDuration(project)
   for (const scene of project.scenes) {
     const aTrack = await getInput(scene.sourceKey).getPrimaryAudioTrack()
     const dur = sceneOutDuration(scene)
@@ -636,14 +637,15 @@ function scheduleSfx(ac: BaseAudioContext, dest: AudioNode, project: Project, to
   out.connect(dest)
   if (project.opening.style === 'tfc') {
     impact(ac, out, TFC_TIMES.crest, 0.9)
-    whoosh(ac, out, 1.0, 0.8)
+    whoosh(ac, out, TFC_TIMES.cut, 0.8)
     impact(ac, out, TFC_TIMES.slam, 0.8)
   } else {
     whoosh(ac, out, 0.35, 0.8)
     impact(ac, out, OPEN_SLAM, 0.9)
   }
-  riser(ac, out, 2.2, OPEN_SEC)
-  let t = OPEN_SEC
+  const openSec = openingDuration(project)
+  riser(ac, out, openSec - 1.8, openSec)
+  let t = openSec
   for (const scene of project.scenes) {
     whoosh(ac, out, t)
     const r = slowRange(scene)
