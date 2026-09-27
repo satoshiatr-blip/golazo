@@ -514,17 +514,22 @@ function drawCornerBox(ctx: Ctx, text: string, u: number) {
   const k = clamp((u - 0.5) / 0.25, 0, 1)
   if (k <= 0) return
   const lines = text.split('\n').slice(0, 2)
-  const s = 150, x = OUT_W - 60 - s, y = 44
+  // 枠は中の文字に合わせた大きさ（黒い余白を少なく）。右端の位置はそろえる
+  const size = lines.length > 1 ? 52 : 68
+  const pad = 14
   ctx.save()
+  ctx.font = `900 ${size}px ${FONT}`
+  const tw = Math.min(420, Math.max(...lines.map(l => ctx.measureText(l).width)))
+  const h = lines.length * size * 1.05 + pad * 2
+  const w = Math.max(tw + pad * 2, h)
+  const x = OUT_W - 60 - w, y = 44
   ctx.globalAlpha = k
   ctx.fillStyle = INK
-  ctx.fillRect(x, y, s, s)
+  ctx.fillRect(x, y, w, h)
   ctx.fillStyle = '#fff'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  const size = lines.length > 1 ? 44 : 58
-  ctx.font = `900 ${size}px ${FONT}`
-  lines.forEach((l, i) => ctx.fillText(l, x + s / 2, y + s / 2 + (i - (lines.length - 1) / 2) * size * 1.05, s - 20))
+  lines.forEach((l, i) => ctx.fillText(l, x + w / 2, y + h / 2 + (i - (lines.length - 1) / 2) * size * 1.05 + size * 0.04, w - pad * 2))
   ctx.restore()
 }
 
