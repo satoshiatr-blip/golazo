@@ -11,6 +11,16 @@ import { COLORS } from './SetupTab'
 import { Button, Card, Field, FilePicker, GroupLabel, Row, ScreenTitle, Segmented, Slider, Toggle, inputCls, type ProjectProps } from './ui'
 
 const MAX_PHOTOS = 5
+// 右下のボックスの候補（空なら表示しない）
+const BADGES = [
+  { label: 'GOAL!', value: 'GOAL!' },
+  { label: 'NICE SAVE!', value: 'NICE SAVE!' },
+  { label: 'NICE PLAY!', value: 'NICE PLAY!' },
+  { label: 'ASSIST!', value: 'ASSIST!' },
+  { label: 'DRIBBLE!', value: 'DRIBBLE!' },
+  { label: 'MVP', value: 'MVP' },
+  { label: 'なし', value: '' },
+]
 // 高柳FC版の赤系（先頭はエンブレムの赤）
 const REDS = [
   { c: '#d7232a', name: 'エンブレム' },
@@ -224,16 +234,24 @@ export default function OpeningTab({ project, setProject, go }: ProjectProps & {
           <Field label="下の帯（空なら日付と対戦相手）">
             <input className={inputCls} value={op.bottom} placeholder={defaultBottom(project) || '2026.09.27  VS 〇〇FC'} onChange={e => setOp({ bottom: e.target.value })} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="右下のボックス">
-              <input className={inputCls} value={op.badge} placeholder="GOAL!" onChange={e => setOp({ badge: e.target.value })} />
+          <div>
+            <Field label="右下のボックス（選ぶか、自由に入力）">
+              <input className={inputCls} value={op.badge} placeholder="なし" onChange={e => setOp({ badge: e.target.value })} />
             </Field>
-            {op.style === 'poster' && (
-              <Field label="右上の四角（空なら出さない）">
-                <input className={inputCls} value={op.corner} placeholder="#10" onChange={e => setOp({ corner: e.target.value })} />
-              </Field>
-            )}
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {BADGES.map(b => (
+                <button key={b.label} onClick={() => setOp({ badge: b.value })}
+                  className={`h-8 px-3 rounded-full text-xs font-bold border transition ${op.badge === b.value ? 'bg-fg text-ink border-fg' : 'bg-raised text-muted border-line'}`}>
+                  {b.label}
+                </button>
+              ))}
+            </div>
           </div>
+          {op.style === 'poster' && (
+            <Field label="右上の四角（空なら出さない）">
+              <input className={inputCls} value={op.corner} placeholder="#10" onChange={e => setOp({ corner: e.target.value })} />
+            </Field>
+          )}
         </Card>
       </div>
 
