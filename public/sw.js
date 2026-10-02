@@ -1,11 +1,12 @@
 // 会場など電波の弱い場所でも開けるよう、アプリ本体をキャッシュする（動画は扱わない）
 // GitHub Pagesはindex.html等にCache-Control: max-age=600を付けてくるため、
 // ここでの fetch は毎回 no-store でブラウザのディスクキャッシュを素通りし、常に最新を取りにいく
-const CACHE = 'golazo-v2'
+const CACHE = 'golazo-v3'
 
 self.addEventListener('install', () => self.skipWaiting())
+// github.io は他アプリと同じオリジンなので、自分のキャッシュだけを消す
 self.addEventListener('activate', e => e.waitUntil(
-  caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()),
+  caches.keys().then(keys => Promise.all(keys.filter(k => /^golazo-v\d+$/.test(k) && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()),
 ))
 
 self.addEventListener('message', e => {
