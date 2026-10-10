@@ -16,6 +16,8 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const req = e.request
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return
+  // 紹介ページの動画は範囲指定で読まれるので、キャッシュを通さずブラウザに任せる
+  if (new URL(req.url).pathname.endsWith('.mp4')) return
   if (req.mode === 'navigate') {
     // 画面は新しい版を優先し、つながらなければキャッシュ。no-storeでブラウザのディスクキャッシュを無視する
     e.respondWith(fetch(req, { cache: 'no-store' }).then(r => {
