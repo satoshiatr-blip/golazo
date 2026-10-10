@@ -13,10 +13,10 @@ body{background:#060818;font-family:'Noto Sans JP',sans-serif;color:#eef2ff;max-
 /* 日本語を単語の途中で折らない（改行は助詞・読点の後ろだけ。印は下のスクリプトで付ける） */
 body{word-break:keep-all;overflow-wrap:anywhere;line-break:strict;}
 .sec{padding:48px 20px;border-bottom:1px solid rgba(255,255,255,0.05);}
-.lbl{font-size:9px;font-weight:700;letter-spacing:3px;color:#38d9f5;text-transform:uppercase;margin-bottom:4px;}
+.lbl{font-size:11px;font-weight:700;letter-spacing:3px;color:#38d9f5;text-transform:uppercase;margin-bottom:4px;}
 .sech{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;margin-bottom:20px;}
 .hero{padding:56px 20px 40px;border-bottom:1px solid rgba(255,255,255,0.05);background:radial-gradient(ellipse 120% 60% at 50% 0%, rgba(56,217,245,0.08) 0%, transparent 70%);}
-.hero-tag{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:700;letter-spacing:2px;color:#38d9f5;background:rgba(56,217,245,0.08);border:1px solid rgba(56,217,245,0.2);padding:5px 12px;border-radius:100px;margin-bottom:20px;}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:2px;color:#38d9f5;background:rgba(56,217,245,0.08);border:1px solid rgba(56,217,245,0.2);padding:5px 12px;border-radius:100px;margin-bottom:20px;}
 .live{width:6px;height:6px;border-radius:50%;background:#38d9f5;animation:blink 2s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 .hero-h1{font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:3px;line-height:0.95;margin-bottom:14px;}
@@ -26,27 +26,32 @@ body{word-break:keep-all;overflow-wrap:anywhere;line-break:strict;}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;margin-top:20px;}
 .stat{background:#060818;padding:14px 6px;text-align:center;}
 .stat-n{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#38d9f5;line-height:1;}
-.stat-l{font-size:9px;color:rgba(238,242,255,0.4);margin-top:2px;letter-spacing:0.3px;}
+.stat-l{font-size:11px;color:rgba(238,242,255,0.55);margin-top:2px;letter-spacing:0.3px;}
 .cta-box{background:rgba(56,217,245,0.12);border:2px solid rgba(56,217,245,0.5);border-radius:14px;padding:18px 20px;text-align:center;}
 .cta-box-l{font-size:11px;color:rgba(56,217,245,0.6);letter-spacing:2px;font-weight:700;margin-bottom:6px;}
 .cta-box-m{font-size:22px;font-weight:900;color:#38d9f5;letter-spacing:1px;}
-.cta-box-u{font-size:10px;color:rgba(56,217,245,0.45);margin-top:6px;font-family:'Space Mono',monospace;word-break:break-all;}
+.cta-box-u{font-size:11px;color:rgba(56,217,245,0.45);margin-top:6px;font-family:'Space Mono',monospace;word-break:break-all;}
 .steps{display:flex;flex-direction:column;gap:8px;}
 .step{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;}
 .sn{font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(56,217,245,0.2);line-height:1;width:28px;flex-shrink:0;text-align:center;}
 .st{font-weight:900;font-size:13px;}
-.sd{font-size:11px;color:rgba(238,242,255,0.45);margin-top:2px;line-height:1.5;}
-.stag{margin-left:auto;flex-shrink:0;font-size:9px;font-weight:700;color:rgba(56,217,245,0.6);background:rgba(56,217,245,0.07);border:1px solid rgba(56,217,245,0.15);padding:3px 8px;border-radius:100px;white-space:nowrap;}
+.sd{font-size:13px;color:rgba(238,242,255,0.55);margin-top:2px;line-height:1.5;}
+.stag{margin-left:auto;flex-shrink:0;font-size:11px;font-weight:700;color:rgba(56,217,245,0.6);background:rgba(56,217,245,0.07);border:1px solid rgba(56,217,245,0.15);padding:3px 8px;border-radius:100px;white-space:nowrap;}
 .feats{display:flex;flex-direction:column;gap:10px;}
 .feat{display:flex;gap:12px;background:rgba(56,217,245,0.02);border:1px solid rgba(56,217,245,0.15);border-radius:12px;padding:14px 16px;}
 .fi{font-size:22px;flex-shrink:0;line-height:1;}
 .ft{font-weight:900;font-size:13px;color:#eef2ff;margin-bottom:3px;}
-.fd{font-size:11px;color:rgba(238,242,255,0.55);line-height:1.6;}
+.fd{font-size:13px;color:rgba(238,242,255,0.55);line-height:1.6;}
 .cta{padding:48px 20px;text-align:center;}
 .cta-h{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:4px;margin-bottom:8px;}
 .cta-s{font-size:12px;color:rgba(238,242,255,0.4);margin-bottom:24px;letter-spacing:1px;}
 .chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:16px;}
-.chip{font-size:10px;font-weight:700;letter-spacing:0.5px;padding:5px 11px;border-radius:100px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:rgba(238,242,255,0.4);}
+.chip{font-size:11px;font-weight:700;letter-spacing:0.5px;padding:5px 11px;border-radius:100px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:rgba(238,242,255,0.4);}
+.hub{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:13px;font-weight:700;color:rgba(238,242,255,0.55);text-decoration:none;}
+.hub b{color:#38d9f5;font-weight:900;letter-spacing:1px;}
+.hub-top{margin:-36px 0 16px;}
+.hub-bottom{margin-top:22px;}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 :root{--g:linear-gradient(120deg,#22d3ee 0%,#3b82f6 30%,#d946ef 58%,#ff7a3d 80%,#ffd400 100%);}
 .hero{background:radial-gradient(ellipse 70% 45% at 15% 0%,rgba(34,211,238,0.16) 0%,transparent 70%),radial-gradient(ellipse 70% 45% at 85% 5%,rgba(217,70,239,0.16) 0%,transparent 70%),radial-gradient(ellipse 80% 40% at 80% 60%,rgba(255,150,40,0.10) 0%,transparent 70%);}
@@ -73,17 +78,18 @@ body{word-break:keep-all;overflow-wrap:anywhere;line-break:strict;}
 <body>
 
 <div class="hero">
+  <a class="hub hub-top" href="https://satoshiatr-blip.github.io/match-kit/">&#8592; <b>MATCH KIT</b> ほかのアプリを見る</a>
   <div class="hero-tag"><span class="live"></span>少年サッカー向け 無料Webアプリ</div>
   <div class="hero-h1">GOL<em>AZO</em></div>
   <p class="hero-desc">試合の見せ場を特別な1本に。<br>写真の切り抜きも動画の編集も、<br>iPhoneの中だけで完結します。</p>
-  <a href="https://satoshiatr-blip.github.io/golazo/" target="_blank" style="text-decoration:none;display:block;">
+  <a href="https://satoshiatr-blip.github.io/golazo/" style="text-decoration:none;display:block;">
     <div class="cta-box">
       <div class="cta-box-l">インストール不要・完全無料</div>
-      <div class="cta-box-m">&#9654; タップして開く</div>
+      <div class="cta-box-m">無料でアプリを使う</div>
       <div class="cta-box-u">satoshiatr-blip.github.io/golazo/</div>
     </div>
   </a>
-  <button class="vbtn" type="button" onclick="openVideo()">&#9654; 動画を見る</button>
+  <button class="vbtn" type="button" onclick="openVideo()">&#9654; 動画を見る（34秒）</button>
   <div class="vmodal" id="vmodal" onclick="if(event.target===this)closeVideo()">
     <button class="vclose" type="button" aria-label="閉じる" onclick="closeVideo()">&#10005;</button>
     <video id="vplayer" src="promo-reel.mp4" controls playsinline preload="none"></video>
@@ -163,10 +169,10 @@ body{word-break:keep-all;overflow-wrap:anywhere;line-break:strict;}
   <div class="lbl" style="margin-bottom:8px;">今すぐ無料で使う</div>
   <div class="cta-h">OPEN &amp; PLAY</div>
   <p class="cta-s">登録・インストール不要。タップするだけで即起動。</p>
-  <a href="https://satoshiatr-blip.github.io/golazo/" target="_blank" style="text-decoration:none;display:block;">
+  <a href="https://satoshiatr-blip.github.io/golazo/" style="text-decoration:none;display:block;">
     <div class="cta-box">
       <div class="cta-box-l">完全無料・今すぐ使える</div>
-      <div class="cta-box-m">&#9654; タップして開く</div>
+      <div class="cta-box-m">無料でアプリを使う</div>
       <div class="cta-box-u">satoshiatr-blip.github.io/golazo/</div>
     </div>
   </a>
@@ -176,6 +182,7 @@ body{word-break:keep-all;overflow-wrap:anywhere;line-break:strict;}
     <span class="chip">&#10003; インストール不要</span>
     <span class="chip">&#10003; データは端末内のみ</span>
   </div>
+  <a class="hub hub-bottom" href="https://satoshiatr-blip.github.io/match-kit/">&#8592; <b>MATCH KIT</b> ほかのアプリを見る</a>
 </div>
 
 <script>
